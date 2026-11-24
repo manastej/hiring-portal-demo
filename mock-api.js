@@ -1,11 +1,31 @@
 // mock-api.js - Global Network Interceptor & Client-side API Simulation for Portfolio Demo
 (function () {
-  const STORAGE_KEY = 'MANASTEJ_PORTFOLIO_STORE_V1';
+  const STORAGE_KEY = 'MANASTEJ_PORTFOLIO_STORE_V4';
+
+  // Force purge any stale cached keys from previous browser visits
+  try {
+    ['MANASTEJ_PORTFOLIO_STORE_V1', 'MANASTEJ_PORTFOLIO_STORE_V2', 'MANASTEJ_PORTFOLIO_STORE_V3'].forEach(k => {
+      localStorage.removeItem(k);
+    });
+    const existingEmp = localStorage.getItem('manastej_employee');
+    if (existingEmp && (existingEmp.includes('Haresh') || existingEmp.includes('haresh'))) {
+      localStorage.removeItem('manastej_employee');
+    }
+  } catch (e) {}
 
   function getStore() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Guarantee user is always Daliya Chakraborty if not switched to intern/HR
+        if (parsed && parsed.currentUser && (parsed.currentUser.full_name.includes('Haresh') || parsed.currentUser.full_name.includes('haresh'))) {
+          parsed.currentUser = JSON.parse(JSON.stringify(window.MOCK_SEED_DATA.currentUser));
+          parsed.currentRole = 'super_admin';
+          saveStore(parsed);
+        }
+        return parsed;
+      }
     } catch (e) {
       console.warn('Failed reading demo store, re-seeding.', e);
     }
@@ -17,15 +37,20 @@
   function saveStore(data) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      if (data && data.currentUser) {
+        localStorage.setItem('manastej_employee', JSON.stringify(data.currentUser));
+      }
     } catch (e) {
       console.warn('Failed saving demo store.', e);
     }
   }
 
   window.resetDemoData = function () {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem('manastej_employee');
-    localStorage.removeItem('ms_shift_state');
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem('manastej_employee');
+      localStorage.removeItem('ms_shift_state');
+    } catch (e) {}
     location.reload();
   };
 
@@ -39,12 +64,13 @@
         role: 'AI & ML Engineer Intern',
         portal_role: 'intern',
         portal_role_label: 'Intern',
+        portal_view: 'staff',
         department: 'Engineering',
         email: 'aakash.patel@manastej.com',
         joining_date: '2026-11-01',
         status: 'Active',
-        can_view_pipeline: false,
-        permissions: ['attendance.own', 'employees.directory', 'leave.apply', 'tasks.view_own', 'tasks.update_own']
+        can_view_pipeline: true,
+        permissions: ['attendance.own', 'employees.directory', 'leave.apply', 'tasks.view_own', 'tasks.update_own', 'applicants.view_summary']
       };
     } else if (role === 'hr_manager') {
       store.currentUser = {
@@ -53,6 +79,7 @@
         role: 'HR Operations Lead',
         portal_role: 'hr_manager',
         portal_role_label: 'HR Manager',
+        portal_view: 'staff',
         department: 'Human Resources',
         email: 'disha.sen@manastej.com',
         joining_date: '2026-09-01',
@@ -69,9 +96,6 @@
       store.currentRole = 'super_admin';
     }
     saveStore(store);
-    try {
-      localStorage.setItem('manastej_employee', JSON.stringify(store.currentUser));
-    } catch (e) {}
     location.reload();
   };
 
@@ -107,7 +131,7 @@
 
     const store = getStore();
 
-    // 1. Session & Auth
+    // 1. Session & Auth (Always authenticated as Daliya Chakraborty or chosen demo role)
     if (path === '/api/auth/session' || path === '/api/auth/me') {
       return jsonResponse({
         success: true,
@@ -115,6 +139,15 @@
         role: store.currentUser.portal_role,
         permissions: store.currentUser.permissions || [],
         auth: { method: 'mock_demo_session' }
+      });
+    }
+
+    // 1b. Logout Handler - Never log out in portfolio demo mode!
+    if (path === '/api/auth/logout') {
+      return jsonResponse({
+        success: true,
+        message: 'Demo mode: permanently signed in as Daliya Chakraborty.',
+        employee: store.currentUser
       });
     }
 
@@ -191,7 +224,7 @@
           active: store.recent_logs[0]?.Status === 'Working Remote',
           started_at: store.recent_logs[0]?.['Clock In'] || '10:00:15 AM',
           mode: store.recent_logs[0]?.Mode || 'Remote / WFH',
-          focus: store.recent_logs[0]?.Focus || 'Portfolio ATS engineering'
+          focus: store.recent_logs[0]?.Focus || 'Recruitment roadmap & system operations'
         },
         tasks: store.tasks.filter(t => t['Employee ID'] === store.currentUser.employee_id),
         recent_logs: store.recent_logs,
@@ -213,7 +246,7 @@
         "Clock Out": "--:--:--",
         Duration: "Active (In Progress)",
         Status: "Working Remote",
-        Focus: body.notes || 'Development & Sprint Tasks'
+        Focus: body.notes || 'Strategic Recruitment & Product Sprint'
       };
       store.recent_logs.unshift(newLog);
       saveStore(store);
@@ -279,7 +312,6 @@
       const role = body.position || body.role || 'Full Stack Developer Intern';
       const docType = body.doc_type || 'both';
 
-      // Record in tech roster if not already there
       const existing = store.tech.find(c => c['Full Name'].toLowerCase() === candName.toLowerCase());
       if (existing) {
         existing.Status = 'Offer Extended';
@@ -343,7 +375,6 @@
   .signatures { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 20px; }
   .sig-block { width: 45%; }
   .sig-line { border-top: 1px solid #94a3b8; margin-top: 50px; padding-top: 8px; font-size: 12px; font-weight: 600; color: #334155; }
-  .badge { display: inline-block; background: #dcfce7; color: #166534; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-bottom: 10px; }
 </style>
 </head>
 <body>
@@ -418,7 +449,7 @@
   <h3>3. Term</h3>
   <p>This agreement shall remain effective for a period of 2 years from the date of disclosure.</p>
   <div style="margin-top:60px;display:flex;justify-content:space-between;">
-    <div><strong>For Manastej:</strong><br><br>Authorized Signatory</div>
+    <div><strong>For Manastej:</strong><br><br>Daliya Chakraborty<br>Founder & CEO</div>
     <div><strong>For Recipient (${candName}):</strong><br><br>Accepted & Agreed</div>
   </div>
 </body>
@@ -442,5 +473,8 @@
     return jsonResponse({ success: true, message: 'Mock response from demo engine.' });
   };
 
-  console.log('✨ [Portfolio Mode] Manastej Mock API Layer Initialized.');
+  // Immediate storage synchronization
+  getStore();
+
+  console.log('✨ [Portfolio Mode] Manastej Mock API Layer Initialized as Daliya Chakraborty.');
 })();

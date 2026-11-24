@@ -1586,8 +1586,8 @@
   <script>
     (function() {
       try {
-        const store = JSON.parse(localStorage.getItem('MANASTEJ_PORTFOLIO_STORE_V1') || '{}');
-        const role = store.currentRole || 'tech_lead';
+        const store = JSON.parse(localStorage.getItem('MANASTEJ_PORTFOLIO_STORE_V4') || '{}');
+        const role = store.currentRole || 'super_admin';
         const sel = document.getElementById('demo-role-select');
         if (sel) sel.value = role;
       } catch(e) {}
@@ -1619,10 +1619,10 @@
           <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
           </button>
           <div class="user-menu" id="signed-in-menu" hidden>
-            <a href="/app">Staff desk</a>
-            <a href="/app#integrity">Clock-in integrity</a>
-            <a href="mailto:info@manastej.com">Help &amp; support</a>
-            <button type="button" id="signed-in-logout">Log out</button>
+            <a href="#/today">Staff desk</a>
+            <a href="#/workforce/attendance">Workforce desk</a>
+            <a href="mailto:founder@manastej.com">Founder contact</a>
+            <button type="button" id="signed-in-logout" style="color: #0d9488; font-weight: 700;">↺ Reset demo data</button>
           </div>
         </div>
       </div>
@@ -7924,15 +7924,11 @@ Disha Gandhi,4,,hr@manastej.com,,"></textarea>
   }
 
   fetch('/api/auth/session').then(function (r) { return r.json(); }).then(function (data) {
-    if (!data.success || !data.employee) { location.replace('/app?next=' + encodeURIComponent('/' + location.hash)); return; }
-    var emp = data.employee;
-    var role = String(emp.portal_role || emp.access || '').toLowerCase();
-    var view = emp.portal_view || ((role === 'intern' || role === 'employee') ? 'intern' : (role ? 'staff' : ''));
-    if (view !== 'staff') { location.replace('/app'); return; }
+    var emp = (data && data.success && data.employee) ? data.employee : (window.MOCK_SEED_DATA ? window.MOCK_SEED_DATA.currentUser : { full_name: 'Daliya Chakraborty', role: 'Founder & CEO', portal_role_label: 'Founder & Admin' });
     window.dispatchEvent(new CustomEvent('manastej-session', { detail: emp }));
     var shown = displayName(emp.full_name);
     nameEl.textContent = shown;
-    roleEl.textContent = emp.role || emp.portal_role_label || 'Staff';
+    roleEl.textContent = emp.role || emp.portal_role_label || 'Founder & CEO';
     initials.textContent = initialsOf(shown);
     if (String(emp.full_name || '').trim().toLowerCase() === 'daliya chakraborty') {
       photo.alt = shown;
@@ -7944,7 +7940,9 @@ Disha Gandhi,4,,hr@manastej.com,,"></textarea>
       photo.style.display = '';
       initials.style.display = 'none';
     }
-  }).catch(function () { location.replace('/app?next=' + encodeURIComponent('/' + location.hash)); });
+  }).catch(function (err) {
+    console.warn('Session init:', err);
+  });
 
   if (chip && menu) {
     var trigger = chip.querySelector('.profile-trigger');
@@ -7959,8 +7957,9 @@ Disha Gandhi,4,,hr@manastej.com,,"></textarea>
   }
   var logout = document.getElementById('signed-in-logout');
   if (logout) {
-    logout.addEventListener('click', function () {
-      fetch('/api/auth/logout', { method: 'POST' }).finally(function () { location.replace('/app'); });
+    logout.addEventListener('click', function (e) {
+      e.preventDefault();
+      window.resetDemoData();
     });
   }
 })();

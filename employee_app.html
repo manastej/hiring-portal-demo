@@ -497,8 +497,12 @@
 
     /* Staff sign-in. Scoped so the tracker shell keeps its own styles. */
     #login-view {
+      display: none !important;
       font-family: 'Manrope', 'Inter', system-ui, sans-serif;
       color: #051311;
+    }
+    #app-shell {
+      display: block !important;
     }
     #login-view * {
       font-family: inherit;
@@ -953,13 +957,13 @@
   </style>
   <link rel="stylesheet" href="/assets/workspace-theme.css">
 </head>
-<body class="staff-portal login-open">
+<body class="staff-portal">
 
   <!-- Toast Element -->
   <div id="toast" class="toast">Notice</div>
 
-  <!-- ==================== GATE / LOGIN VIEW (If not verified employee) ==================== -->
-  <div id="login-view" class="tab-view active">
+  <!-- ==================== GATE / LOGIN VIEW (Disabled in Portfolio Demo) ==================== -->
+  <div id="login-view" class="tab-view" style="display: none !important;">
     <section class="ms-hero" aria-hidden="true">
       <div class="ms-glow"></div>
       <div class="ms-wordmark">
@@ -1025,7 +1029,7 @@
   </div>
 
   <!-- ==================== MAIN AUTHENTICATED APP SHELL ==================== -->
-  <div id="app-shell" style="display: none;">
+  <div id="app-shell" style="display: block;">
     
     <!-- Top Header -->
     <header class="app-header">
@@ -1037,9 +1041,9 @@
         </div>
       </div>
       <div class="header-actions">
-        <a id="pipeline-link" href="/#/hiring" style="display:none; background:#1e264b; color:white; font-size:0.75rem; font-weight:700; padding:6px 10px; border-radius:8px; text-decoration:none;">Hiring</a>
-        <button class="btn-secondary" style="padding: 6px 10px; border-radius: 8px; font-size: 0.75rem;" onclick="handleLogout()" title="Log Out">
-          Log Out
+        <a id="pipeline-link" href="/" style="background:#1e264b; color:white; font-size:0.75rem; font-weight:700; padding:6px 10px; border-radius:8px; text-decoration:none;">ATS Pipeline ↗</a>
+        <button class="btn-secondary" style="padding: 6px 10px; border-radius: 8px; font-size: 0.75rem;" onclick="window.resetDemoData()" title="Reset Demo Data">
+          ↺ Reset Demo
         </button>
       </div>
     </header>
@@ -1546,10 +1550,8 @@
     }
 
     function showLoginGate() {
-      const view = document.getElementById('login-view');
-      view.style.display = '';
-      view.classList.add('active');
-      document.body.classList.add('login-open');
+      currentEmployee = (window.MOCK_SEED_DATA && window.MOCK_SEED_DATA.currentUser) ? window.MOCK_SEED_DATA.currentUser : { full_name: 'Daliya Chakraborty', role: 'Founder & CEO', portal_role: 'super_admin' };
+      renderAppForEmployee();
     }
 
     function showLoginError(message) {
@@ -1650,15 +1652,12 @@
       try {
         const res = await fetch('/api/auth/session');
         const data = await res.json();
-        if (data.success && data.employee) {
-          currentEmployee = data.employee;
-          localStorage.setItem('manastej_employee', JSON.stringify(currentEmployee));
-          renderAppForEmployee();
-        } else {
-          localStorage.removeItem('manastej_employee');
-        }
+        currentEmployee = (data && data.success && data.employee) ? data.employee : window.MOCK_SEED_DATA.currentUser;
+        localStorage.setItem('manastej_employee', JSON.stringify(currentEmployee));
+        renderAppForEmployee();
       } catch (e) {
-        console.error('Session verify error:', e);
+        currentEmployee = window.MOCK_SEED_DATA.currentUser;
+        renderAppForEmployee();
       }
     }
 
@@ -1678,33 +1677,25 @@
     }
 
     function applyPortalChrome() {
-      const isIntern = viewFor(currentEmployee) === 'intern';
-      document.body.classList.toggle('intern-portal', isIntern);
-      document.body.classList.toggle('staff-portal', !isIntern);
+      document.body.classList.remove('intern-portal');
+      document.body.classList.add('staff-portal');
       const tracker = document.getElementById('tab-tracker');
-      if (tracker) tracker.classList.toggle('intern-view', isIntern);
-      showNav('nav-team', !isIntern && can('tasks.assign'));
-      showNav('nav-integrity', !isIntern && can('integrity.view'));
-      showNav('nav-leaves', !isIntern && can('leave.apply'));
-      showNav('nav-workforce', isIntern);
+      if (tracker) tracker.classList.remove('intern-view');
+      showNav('nav-team', can('tasks.assign'));
+      showNav('nav-integrity', can('integrity.view'));
+      showNav('nav-leaves', true);
+      showNav('nav-workforce', false);
       const work = document.getElementById('profile-work');
-      if (work) work.style.display = (!isIntern && can('tasks.view_own')) ? 'block' : 'none';
+      if (work) work.style.display = 'block';
       const note = document.getElementById('profile-documents-note');
       if (note) {
-        note.textContent = isIntern
-          ? 'Only files you upload here are visible in your document list.'
-          : 'Your employee documents and files you upload are shown here.';
+        note.textContent = 'Your employee documents and files you upload are shown here.';
       }
       const pipelineLink = document.getElementById('pipeline-link');
-      if (pipelineLink) pipelineLink.style.display = (!isIntern && currentEmployee.can_view_pipeline) ? 'inline-flex' : 'none';
+      if (pipelineLink) pipelineLink.style.display = 'inline-flex';
       const adminReset = document.getElementById('admin-reset');
-      if (adminReset) adminReset.style.display = (!isIntern && can('users.manage')) ? 'block' : 'none';
-      const active = document.querySelector('.tab-view.active');
-      const staffOnly = active && ['tab-team', 'tab-integrity', 'tab-leaves'].includes(active.id);
-      if ((isIntern && staffOnly) || (!isIntern && active && active.id === 'tab-workforce')) {
-        switchTab('tab-tracker', document.querySelector('.bottom-nav .nav-tab'));
-      }
-      return isIntern;
+      if (adminReset) adminReset.style.display = can('users.manage') ? 'block' : 'none';
+      return false;
     }
 
     function renderAppForEmployee() {
@@ -1877,27 +1868,8 @@
         : (data.message || 'Could not clear that password.');
     }
 
-    async function handleLogout() {
-      if (!confirm('Are you sure you want to log out of Manastej Staff?')) return;
-      try {
-        await fetch('/api/auth/logout', { method: 'POST' });
-      } catch (e) {
-        console.error(e);
-      }
-      localStorage.removeItem('manastej_employee');
-      currentEmployee = null;
-      if (stopwatchInterval) clearInterval(stopwatchInterval);
-      if (window.ActivityHeartbeat) ActivityHeartbeat.stop();
-      document.getElementById('app-shell').style.display = 'none';
-      document.getElementById('login-id').value = '';
-      loginIdentity = '';
-      setLoginMode('');
-      const errBox = document.getElementById('login-error');
-      if (errBox) {
-        errBox.style.display = 'none';
-        errBox.textContent = '';
-      }
-      showLoginGate();
+    function handleLogout() {
+      window.resetDemoData();
     }
 
     function esc(value) {
