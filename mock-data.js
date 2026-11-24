@@ -1,18 +1,18 @@
 // mock-data.js - Realistic synthetic data for Portfolio & Resume Showcase
 window.MOCK_SEED_DATA = {
-  currentRole: 'tech_lead',
+  currentRole: 'super_admin',
   currentUser: {
     employee_id: 'EMP-001',
-    full_name: 'Haresh Sainath',
-    role: 'Tech Lead',
-    portal_role: 'tech_lead',
-    portal_role_label: 'Tech Lead / Admin',
-    department: 'Engineering',
-    email: 'haresh.sainath@manastej.com',
-    company_email: 'haresh.sainath@manastej.com',
-    personal_email: 'shareshsainaath@gmail.com',
-    phone: '+91 99038 12807',
-    joining_date: '2026-06-01',
+    full_name: 'Daliya Chakraborty',
+    role: 'Founder & CEO',
+    portal_role: 'super_admin',
+    portal_role_label: 'Founder & Admin',
+    department: 'Executive Leadership',
+    email: 'founder@manastej.com',
+    company_email: 'founder@manastej.com',
+    personal_email: 'daliyachakroborty@gmail.com',
+    phone: '+91 70039 38978',
+    joining_date: '2026-01-01',
     status: 'Active',
     can_view_pipeline: true,
     permissions: [
@@ -253,13 +253,13 @@ window.MOCK_SEED_DATA = {
   employees: [
     {
       "Employee ID": "EMP-001",
-      "Full Name": "Haresh Sainath",
-      "Role": "Tech Lead",
-      "Department": "Engineering",
-      "Email": "haresh.sainath@manastej.com",
-      "Company Email": "haresh.sainath@manastej.com",
-      "Phone Number": "+91 99038 12807",
-      "Joining Date": "2026-06-01",
+      "Full Name": "Daliya Chakraborty",
+      "Role": "Founder & CEO",
+      "Department": "Executive Leadership",
+      "Email": "founder@manastej.com",
+      "Company Email": "founder@manastej.com",
+      "Phone Number": "+91 70039 38978",
+      "Joining Date": "2026-01-01",
       "Employment Status": "Active",
       "Offer Letter Status": "✅ Signed (On File)",
       "NDA Status": "✅ Signed (On File)",
@@ -268,11 +268,11 @@ window.MOCK_SEED_DATA = {
     },
     {
       "Employee ID": "EMP-002",
-      "Full Name": "Vedant Sahoo",
+      "Full Name": "Rahul Sen",
       "Role": "Full Stack Developer",
       "Department": "Engineering",
-      "Email": "vedant.sahoo@manastej.com",
-      "Company Email": "vedant.sahoo@manastej.com",
+      "Email": "rahul.sen@manastej.com",
+      "Company Email": "rahul.sen@manastej.com",
       "Phone Number": "+91 98301 23456",
       "Joining Date": "2026-08-15",
       "Employment Status": "Active",
@@ -298,11 +298,11 @@ window.MOCK_SEED_DATA = {
     },
     {
       "Employee ID": "EMP-004",
-      "Full Name": "Ashwath Srinivasan",
+      "Full Name": "Sanjay Sharma",
       "Role": "AI & Systems Engineer",
       "Department": "Engineering",
-      "Email": "ashwath.s@manastej.com",
-      "Company Email": "ashwath.s@manastej.com",
+      "Email": "sanjay.sharma@manastej.com",
+      "Company Email": "sanjay.sharma@manastej.com",
       "Phone Number": "+91 96503 45678",
       "Joining Date": "2026-07-10",
       "Employment Status": "Active",
@@ -332,20 +332,20 @@ window.MOCK_SEED_DATA = {
     {
       "Task ID": "TSK-101",
       "Employee ID": "EMP-001",
-      "Assignee": "Haresh Sainath",
-      "Role": "Tech Lead",
-      "Title": "Design & deploy ATS mock architecture for portfolio showcase",
+      "Assignee": "Daliya Chakraborty",
+      "Role": "Founder & CEO",
+      "Title": "Design & deploy ATS architecture for winter recruitment cycle",
       "Status": "In Progress",
       "Priority": "High",
       "Created Date": "2026-11-24",
-      "Notes": "Self-contained interactive demo engine with realistic candidate rosters."
+      "Notes": "Full-cycle ATS portal with multi-pipeline candidate evaluation."
     },
     {
       "Task ID": "TSK-102",
       "Employee ID": "EMP-004",
-      "Assignee": "Ashwath Srinivasan",
+      "Assignee": "Sanjay Sharma",
       "Role": "AI & Systems Engineer",
-      "Title": "Optimize Playwright A4 2-page Offer Letter PDF pipeline",
+      "Title": "Optimize 2-page A4 Offer Letter PDF generation pipeline",
       "Status": "Completed",
       "Priority": "High",
       "Created Date": "2026-11-22",
@@ -354,7 +354,7 @@ window.MOCK_SEED_DATA = {
     {
       "Task ID": "TSK-103",
       "Employee ID": "EMP-002",
-      "Assignee": "Vedant Sahoo",
+      "Assignee": "Rahul Sen",
       "Role": "Full Stack Developer",
       "Title": "Audit RBAC session guards and employee desk responsiveness",
       "Status": "Completed",
@@ -383,7 +383,7 @@ window.MOCK_SEED_DATA = {
       "Clock Out": "--:--:--",
       "Duration": "Active (In Progress)",
       "Status": "Working Remote",
-      "Focus": "Portfolio ATS demo & interactive client mock engine"
+      "Focus": "Strategic recruitment planning & system architecture"
     },
     {
       "Date": "2026-11-23",
@@ -392,7 +392,7 @@ window.MOCK_SEED_DATA = {
       "Clock Out": "06:15:30 PM",
       "Duration": "8h 45m",
       "Status": "Completed",
-      "Focus": "Offer letter template redesign & SMTP standalone dispatch verification"
+      "Focus": "Offer letter template redesign & legal compliance review"
     },
     {
       "Date": "2026-11-22",
@@ -401,7 +401,7 @@ window.MOCK_SEED_DATA = {
       "Clock Out": "06:45:00 PM",
       "Duration": "8h 30m",
       "Status": "Completed",
-      "Focus": "Candidate modal project scope dropdown & equity terms toggle"
+      "Focus": "Candidate modal project scope dropdown & equity terms review"
     },
     {
       "Date": "2026-11-21",
@@ -410,7 +410,7 @@ window.MOCK_SEED_DATA = {
       "Clock Out": "05:30:15 PM",
       "Duration": "8h 30m",
       "Status": "Completed",
-      "Focus": "Sprint planning & applicant intake database review"
+      "Focus": "Operations review & applicant intake database oversight"
     }
   ],
 
@@ -418,12 +418,12 @@ window.MOCK_SEED_DATA = {
     {
       "Leave ID": "LV-201",
       "Employee ID": "EMP-001",
-      "Full Name": "Haresh Sainath",
+      "Full Name": "Daliya Chakraborty",
       "Type": "Casual Leave",
       "Start Date": "2026-12-05",
       "End Date": "2026-12-06",
       "Days": 2,
-      "Reason": "Personal commitment & family event",
+      "Reason": "Leadership retreat & strategic partnership meetings",
       "Status": "Approved",
       "Reviewed By": "Executive Leadership"
     },

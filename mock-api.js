@@ -66,7 +66,7 @@
       };
     } else {
       store.currentUser = JSON.parse(JSON.stringify(window.MOCK_SEED_DATA.currentUser));
-      store.currentRole = 'tech_lead';
+      store.currentRole = 'super_admin';
     }
     saveStore(store);
     try {
