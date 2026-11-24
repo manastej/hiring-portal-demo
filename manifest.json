@@ -1,0 +1,25 @@
+{
+  "name": "Manastej Staff - Remote Workforce Portal",
+  "short_name": "Manastej Staff",
+  "description": "Official Remote Workforce Time Tracking & Leave Management App for Manastej Employees",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#f7faf7",
+  "theme_color": "#075958",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/sidebar_bottom_lotus.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/sidebar_lotus_logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

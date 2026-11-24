@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/app", "destination": "/employee_app.html" },
+    { "source": "/portal", "destination": "/employee_app.html" },
+    { "source": "/employee", "destination": "/employee_app.html" },
+    { "source": "/employee-portal", "destination": "/employee_app.html" }
+  ]
+}

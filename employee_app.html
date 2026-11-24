@@ -1,0 +1,2441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Manastej Staff - Remote Workforce & Attendance App</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#075958">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Manastej Staff">
+  <link rel="apple-touch-icon" href="/assets/sidebar_bottom_lotus.png">
+  <link rel="icon" type="image/png" href="/assets/workspace-logo.png">
+  <script src="/mock-data.js"></script>
+  <script src="/mock-api.js"></script>
+  <script src="/assets/workspace-clock.js"></script>
+  <script src="/assets/activity-heartbeat.js"></script>
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #0d9488;
+      --primary-dark: #0f766e;
+      --primary-light: #ccfbf1;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      padding-bottom: 74px; /* Space for bottom tab nav */
+    }
+    body.login-open {
+      padding-bottom: 0;
+      background: #f7fbfa;
+    }
+
+    /* Top App Bar */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+    }
+
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .brand-sub {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-install {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      border: 1px solid #99f6e4;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-install:hover {
+      background: #99f6e4;
+    }
+
+    /* Main Container */
+    .app-container {
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 16px 16px 24px 16px;
+      flex: 1;
+    }
+
+    /* Card styling */
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 16px;
+      transition: all 0.2s ease;
+    }
+
+    /* Hero Clock & Shift Card */
+    .clock-hero {
+      text-align: center;
+      padding: 24px 16px;
+      background: linear-gradient(135deg, #042f2e 0%, #0f766e 100%);
+      color: #ffffff;
+      border-radius: 20px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+
+    .clock-hero::after {
+      content: "";
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 140px;
+      height: 140px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .live-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .live-date {
+      font-size: 0.85rem;
+      color: #99f6e4;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+
+    .shift-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(4px);
+    }
+
+    .pulse-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+      animation: pulse 1.6s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+
+    .stopwatch-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-top: 14px;
+      background: rgba(0, 0, 0, 0.2);
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 10px;
+    }
+
+    /* Action Buttons */
+    .btn-action {
+      width: 100%;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 0.98rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow);
+    }
+
+    .btn-clock-in {
+      background: #10b981;
+      color: #ffffff;
+    }
+    .btn-clock-in:hover {
+      background: #059669;
+      transform: translateY(-1px);
+    }
+
+    .btn-clock-out {
+      background: #ef4444;
+      color: #ffffff;
+    }
+    .btn-clock-out:hover {
+      background: #dc2626;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: #334155;
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background: #f1f5f9;
+    }
+
+    /* Input controls */
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 0.88rem;
+      background: #ffffff;
+      outline: none;
+      transition: border 0.15s ease;
+    }
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-success { background: #dcfce7; color: #15803d; }
+    .badge-warning { background: #fef3c7; color: #b45309; }
+    .badge-danger { background: #fee2e2; color: #b91c1c; }
+    .badge-info { background: #e0f2fe; color: #0369a1; }
+
+    /* Bottom Navigation Bar */
+    .rbac-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    .rbac-table th { text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+    .rbac-table td { padding: 8px; border-bottom: 1px solid #f1f5f9; color: #1e293b; vertical-align: top; }
+    .rbac-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .rbac-chip { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.68rem; font-weight: 700; }
+    .rbac-chip.idle { background: #fef3c7; color: #92400e; }
+    .rbac-chip.gone { background: #fee2e2; color: #991b1b; }
+    .rbac-chip.ok { background: #dcfce7; color: #166534; }
+    .rbac-muted { font-size: 0.74rem; color: #64748b; }
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 6px 8px max(6px, env(safe-area-inset-bottom));
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .nav-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 6px 0;
+      background: transparent;
+      border: none;
+      color: #64748b;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+    .nav-tab.active {
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .nav-icon {
+      font-size: 1.25rem;
+    }
+
+    /* Tab content view switching */
+    .tab-view {
+      display: none;
+    }
+    .tab-view.active {
+      display: block;
+      animation: fadeIn 0.18s ease-out;
+    }
+
+    .portal-section-heading { margin-bottom: 14px; }
+    .portal-section-heading h2 { color: #123a36; font: 500 1.65rem/1.1 'Instrument Serif', Georgia, serif; }
+    .portal-section-heading p { margin-top: 6px; color: #687b79; font-size: 0.84rem; line-height: 1.5; }
+    .leave-overview, .team-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .leave-stat, .team-stat { padding: 14px; border: 1px solid #dce9e4; border-radius: 14px; background: linear-gradient(145deg, #fffefa, #f2f8f4); }
+    .leave-stat span, .team-stat span { display: block; color: #6b7f7c; font-size: 0.69rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .leave-stat strong, .team-stat strong { display: block; margin-top: 5px; color: #075e57; font: 500 1.6rem/1 'Instrument Serif', Georgia, serif; }
+    .leave-layout { display: grid; gap: 14px; }
+    .leave-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .leave-feed { display: grid; gap: 10px; }
+    .leave-request-card { padding: 14px; border: 1px solid #e2ebe5; border-radius: 14px; background: #fffefa; }
+    .leave-request-head, .team-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .leave-request-title { color: #173b37; font-weight: 700; }
+    .leave-request-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 9px; color: #687b79; font-size: .77rem; }
+    .team-filters { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(120px, .7fr); gap: 8px; margin: 10px 0 14px; }
+    .team-task-list, .team-directory-list { display: grid; gap: 9px; }
+    .team-task-card, .team-person-card { padding: 12px; border: 1px solid #e2ebe5; border-radius: 13px; background: #fffefa; }
+    .team-task-title { color: #183b37; font-size: .9rem; font-weight: 700; }
+    .team-task-meta, .team-person-meta { margin-top: 4px; color: #71817e; font-size: .75rem; line-height: 1.45; }
+    .team-department { margin: 8px 0 0; color: #52706b; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .team-empty { padding: 16px 10px; color: #71817e; font-size: .82rem; text-align: center; }
+    .profile-card { padding: 20px; }
+    .profile-identity-row { display: flex; align-items: center; gap: 14px; padding-bottom: 17px; border-bottom: 1px solid var(--border); }
+    .profile-avatar { flex: 0 0 auto; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #d9f2e8; color: #087568; font-size: 1.08rem; font-weight: 800; }
+    .profile-identity-copy { flex: 1; min-width: 0; }
+    .profile-name-line { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .profile-name-line h2 { color: #173b37; font-size: 1.12rem; font-weight: 800; }
+    .profile-status-chip { display: inline-flex; align-items: center; min-height: 23px; padding: 3px 9px; border: 1px solid #c7e6d7; border-radius: 999px; background: #eff9f3; color: #08775d; font-size: .68rem; font-weight: 750; }
+    .profile-role { margin-top: 4px; color: var(--primary); font-size: .79rem; font-weight: 700; }
+    .profile-dept { margin-top: 2px; color: #64748b; font-size: .76rem; }
+    .profile-meta-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-top: 15px; }
+    .profile-meta-item { min-width: 0; padding: 10px 11px; border: 1px solid #e4ece7; border-radius: 11px; background: #f8fbf9; }
+    .profile-meta-item dt { color: #71817e; font-size: .64rem; font-weight: 750; letter-spacing: .045em; text-transform: uppercase; }
+    .profile-meta-item dd { margin-top: 4px; color: #183b37; font-size: .77rem; font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
+    .document-checklist { margin: 14px 0 18px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 14px; background: #f8fafc; }
+    .document-checklist-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .document-checklist-title { color: #173b37; font-size: .88rem; font-weight: 750; }
+    .document-checklist-count { color: #0d766e; font-size: .74rem; font-weight: 800; white-space: nowrap; }
+    .document-progress-track { width: 100%; height: 7px; overflow: hidden; border-radius: 99px; background: #e3ece7; }
+    .document-progress-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #0b8176, #39a88d); transition: width .2s ease; }
+    .document-checklist-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+    .document-check-item { display: grid; align-content: start; gap: 8px; min-width: 0; min-height: 82px; padding: 11px; border: 1px solid #fde68a; border-radius: 11px; background: #fffbeb; color: #92400e; font-size: .75rem; line-height: 1.35; }
+    .document-check-item.is-complete { border-color: #a7f3d0; background: #ecfdf5; color: #065f46; }
+    .document-check-item-top { display: flex; align-items: center; gap: 8px; }
+    .document-check-icon { font-size: .95rem; }
+    .document-check-label { min-width: 0; font-size: .72rem; font-weight: 750; }
+    .document-check-status { display: flex; align-items: center; gap: 5px; font-size: .7rem; font-weight: 800; }
+    .document-upload-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 4px 0 8px; }
+    .document-upload-heading h4 { color: #173b37; font-size: .86rem; font-weight: 750; }
+    .document-upload-count { color: #71817e; font-size: .74rem; }
+    @media (max-width: 440px) {
+      .leave-overview, .team-overview { grid-template-columns: 1fr 1fr; }
+      .leave-form-grid, .team-filters { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .document-checklist-grid { grid-template-columns: 1fr; }
+      .document-checklist { padding: 13px; }
+      .profile-meta-grid { grid-template-columns: 1fr 1fr; }
+      .profile-meta-item:last-child { grid-column: 1 / -1; }
+      .profile-card { padding: 16px; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Modal Backdrop */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 60;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+    .modal-backdrop.active {
+      display: flex;
+    }
+    .modal-card {
+      background: #ffffff;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 480px;
+      padding: 22px;
+      box-shadow: var(--shadow-lg);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: #1e293b;
+      color: #ffffff;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      z-index: 9999;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      max-width: 90%;
+      text-align: center;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Staff sign-in. Scoped so the tracker shell keeps its own styles. */
+    #login-view {
+      font-family: 'Manrope', 'Inter', system-ui, sans-serif;
+      color: #051311;
+    }
+    #login-view * {
+      font-family: inherit;
+    }
+    #login-view.tab-view.active {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: #f7fbfa;
+      animation: none;
+    }
+    #login-view .ms-hero {
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 28px;
+      padding: 36px 48px;
+      color: #e8f6f4;
+      background:
+        radial-gradient(ellipse 80% 60% at 40% 35%, rgba(61, 184, 173, 0.22), transparent 70%),
+        radial-gradient(ellipse 50% 40% at 90% 100%, rgba(242, 196, 109, 0.12), transparent 70%),
+        linear-gradient(180deg, #051311, #0a211e 60%, #0f2f2b);
+    }
+    #login-view .ms-glow {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(157, 196, 190, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(157, 196, 190, 0.05) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse at 40% 40%, #000 15%, transparent 70%);
+      pointer-events: none;
+    }
+    #login-view .ms-wordmark {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 28px;
+      color: #f4faf8;
+    }
+    #login-view .ms-wordmark em {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-style: italic;
+      color: #56d4cf;
+    }
+    #login-view .ms-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      object-fit: cover;
+      box-shadow: 0 0 30px rgba(86, 212, 207, 0.35);
+    }
+    #login-view .ms-hero-copy {
+      position: relative;
+      max-width: 520px;
+    }
+    #login-view .ms-eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      font-weight: 700;
+      color: #9dc4be;
+    }
+    #login-view .ms-eyebrow span {
+      color: #f2c46d;
+      margin: 0 8px;
+    }
+    #login-view .ms-hero-copy h2 {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(42px, 4.6vw, 64px);
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: #f4faf8;
+      margin: 18px 0 20px;
+    }
+    #login-view .ms-hero-copy h2 em {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-style: italic;
+      color: #56d4cf;
+    }
+    #login-view .ms-hero-copy p {
+      color: #9dc4be;
+      font-size: 16px;
+      line-height: 1.65;
+      max-width: 440px;
+    }
+    #login-view .ms-pillars {
+      list-style: none;
+      margin: 36px 0 0;
+      display: grid;
+      gap: 10px;
+    }
+    #login-view .ms-pillars li {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 14px 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(157, 196, 190, 0.16);
+      background: rgba(15, 47, 43, 0.55);
+    }
+    #login-view .ms-pillars b {
+      font-size: 14px;
+      color: #f4faf8;
+    }
+    #login-view .ms-pillars span {
+      font-size: 13px;
+      color: #9dc4be;
+    }
+    #login-view .ms-hero-foot {
+      position: relative;
+      font-size: 12px;
+      color: #4c6f69;
+    }
+    #login-view .ms-access {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+    #login-view .ms-card {
+      width: 100%;
+      max-width: 440px;
+      background: #ffffff;
+      border: 1px solid #d5ebe7;
+      border-radius: 20px;
+      box-shadow: 0 1px 2px rgba(5, 19, 17, 0.04), 0 24px 60px -36px rgba(15, 47, 43, 0.4);
+      padding: 28px 28px 24px;
+    }
+    #login-view .ms-card-logo {
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto 14px;
+    }
+    #login-view .ms-kicker {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #2a8f85;
+    }
+    #login-view .ms-card h1 {
+      text-align: center;
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #051311;
+      margin: 6px 0 8px;
+    }
+    #login-view .ms-lead {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4c6f69;
+      margin-bottom: 22px;
+    }
+    #login-view .ms-field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    #login-view .ms-field[hidden] {
+      display: none !important;
+    }
+    #login-view .ms-field label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #4c6f69;
+    }
+    #login-view .ms-field input {
+      height: 48px;
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid #d5ebe7;
+      background: #ffffff;
+      padding: 0 14px;
+      font-size: 15px;
+      color: #051311;
+      outline: none;
+    }
+    #login-view .ms-field input:focus {
+      border-color: #2a8f85;
+      box-shadow: 0 0 0 3px rgba(42, 143, 133, 0.16);
+    }
+    #login-view .ms-hint {
+      font-size: 12px;
+      line-height: 1.45;
+      color: #4c6f69;
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    #login-view .ms-hint.ok { color: #15803d; }
+    #login-view .ms-hint.bad { color: #be123c; }
+    #login-view .ms-strength[hidden] { display: none !important; }
+    #login-view .ms-bars {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 2px;
+    }
+    #login-view .ms-bars span {
+      display: block;
+      height: 5px;
+      border-radius: 99px;
+      background: #e3f1ee;
+    }
+    #login-view .ms-strength[data-level="1"] .ms-bars span.on { background: #e11d48; }
+    #login-view .ms-strength[data-level="2"] .ms-bars span.on { background: #f59e0b; }
+    #login-view .ms-strength[data-level="3"] .ms-bars span.on { background: #0f766e; }
+    #login-view .ms-strength[data-level="4"] .ms-bars span.on { background: #16a34a; }
+    #login-view .ms-strength-text {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4c6f69;
+      min-height: 1.2em;
+    }
+    #login-view .ms-strength[data-level="1"] .ms-strength-text { color: #e11d48; }
+    #login-view .ms-strength[data-level="2"] .ms-strength-text { color: #b45309; }
+    #login-view .ms-strength[data-level="3"] .ms-strength-text { color: #0f766e; }
+    #login-view .ms-strength[data-level="4"] .ms-strength-text { color: #15803d; }
+    #login-view .ms-rules {
+      list-style: none;
+      display: grid;
+      gap: 5px;
+      margin-top: 4px;
+    }
+    #login-view .ms-rules li {
+      position: relative;
+      padding-left: 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    #login-view .ms-rules li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 5px;
+      width: 8px;
+      height: 8px;
+      border-radius: 99px;
+      background: #d5ebe7;
+    }
+    #login-view .ms-rules li.ok { color: #17665e; }
+    #login-view .ms-rules li.ok::before { background: #16a34a; }
+    #login-view .ms-submit {
+      width: 100%;
+      height: 48px;
+      margin-top: 6px;
+      border: 0;
+      border-radius: 12px;
+      background: #0f2f2b;
+      color: #f4faf8;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    #login-view .ms-submit:hover {
+      background: #2a8f85;
+    }
+    #login-view .ms-submit:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+    #login-view .ms-error {
+      display: none;
+      margin-top: 14px;
+      font-size: 13px;
+      color: #9f1239;
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      border-radius: 10px;
+      padding: 10px 12px;
+      line-height: 1.45;
+    }
+    #login-view .ms-foot {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid #e3f1ee;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4c6f69;
+    }
+    @media (max-width: 900px) {
+      #login-view.tab-view.active {
+        grid-template-columns: 1fr;
+      }
+      #login-view .ms-hero {
+        display: none;
+      }
+      #login-view .ms-access {
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: 28px 18px;
+      }
+    }
+
+    /* Desktop workforce workspace: retain the compact mobile layout on phones,
+       while giving authenticated desktop users a real navigation rail and roomier content. */
+    @media (min-width: 1024px) {
+      body.staff-portal:not(.login-open) {
+        padding-bottom: 0;
+      }
+
+      body.staff-portal:not(.login-open) .app-header {
+        min-height: 76px;
+        padding: 12px clamp(28px, 4vw, 64px);
+      }
+
+      body.staff-portal:not(.login-open) .app-container {
+        --staff-rail-width: 220px;
+        --staff-workspace-width: calc(100vw - var(--staff-rail-width));
+        --staff-content-width: min(1360px, calc(var(--staff-workspace-width) - 48px));
+        width: var(--staff-content-width);
+        max-width: none;
+        margin: 0 0 0 calc(var(--staff-rail-width) + (var(--staff-workspace-width) - var(--staff-content-width)) / 2);
+        padding: 28px clamp(24px, 3vw, 52px) 48px;
+      }
+
+      body.staff-portal:not(.login-open) .bottom-nav {
+        top: 76px;
+        right: auto;
+        bottom: 0;
+        left: 0;
+        width: 220px;
+        max-width: none;
+        margin: 0;
+        padding: 24px 14px;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: stretch;
+        gap: 6px;
+        border-top: 0;
+        border-right: 1px solid #dce9e4;
+      }
+
+      body.staff-portal:not(.login-open) .nav-tab {
+        flex: 0 0 auto;
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        font-size: 0.86rem;
+      }
+
+      body.staff-portal:not(.login-open) .nav-tab.active {
+        background: #e7f2ed;
+      }
+
+      body.staff-portal:not(.login-open) .nav-icon {
+        width: 24px;
+        font-size: 1.05rem;
+        text-align: center;
+      }
+
+      body.staff-portal:not(.login-open) #tab-tracker.tab-view.active {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+        align-content: start;
+        gap: 18px;
+      }
+
+      body.staff-portal:not(.login-open) #emp-nda-banner {
+        grid-column: 1 / -1;
+        margin-bottom: 0 !important;
+      }
+
+      body.staff-portal:not(.login-open) #tab-tracker > .clock-hero {
+        grid-column: 1;
+        min-height: 250px;
+        margin-bottom: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      body.staff-portal:not(.login-open) #tab-tracker > .card {
+        grid-column: 2;
+        align-self: stretch;
+        margin-bottom: 0;
+      }
+
+      body.staff-portal:not(.login-open) #tab-tracker > div[style*="display: grid"] {
+        grid-column: 1 / -1;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        margin-top: 4px;
+      }
+
+      body.staff-portal:not(.login-open) #tab-tracker > div[style*="display: grid"] > .card {
+        margin-bottom: 0;
+      }
+
+      body.staff-portal:not(.login-open) #tab-leaves.tab-view.active,
+      body.staff-portal:not(.login-open) #tab-team.tab-view.active,
+      body.staff-portal:not(.login-open) #tab-integrity.tab-view.active,
+      body.staff-portal:not(.login-open) #tab-profile.tab-view.active {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-content: start;
+        gap: 18px;
+      }
+
+      body.staff-portal:not(.login-open) #tab-leaves > .portal-section-heading,
+      body.staff-portal:not(.login-open) #tab-leaves > .leave-overview,
+      body.staff-portal:not(.login-open) #tab-team > .portal-section-heading,
+      body.staff-portal:not(.login-open) #tab-team > .team-overview,
+      body.staff-portal:not(.login-open) #tab-integrity > div:first-child,
+      body.staff-portal:not(.login-open) #tab-profile > .portal-section-heading,
+      body.staff-portal:not(.login-open) #tab-profile > .card:nth-of-type(1) {
+        grid-column: 1 / -1;
+      }
+
+      body.staff-portal:not(.login-open) #tab-leaves .leave-layout {
+        grid-column: 1 / -1;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        align-items: start;
+      }
+
+      body.staff-portal:not(.login-open) #tab-team > .card,
+      body.staff-portal:not(.login-open) #tab-integrity > .card,
+      body.staff-portal:not(.login-open) #tab-profile > .card {
+        margin-bottom: 0;
+      }
+
+      body.staff-portal:not(.login-open) #tab-team > .card:nth-last-child(1) {
+        grid-column: 1 / -1;
+      }
+
+      body.staff-portal:not(.login-open) #tab-integrity > .card {
+        grid-column: 1 / -1;
+      }
+
+      body.staff-portal:not(.login-open) #tab-workforce .team-directory-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="/assets/workspace-theme.css">
+</head>
+<body class="staff-portal login-open">
+
+  <!-- Toast Element -->
+  <div id="toast" class="toast">Notice</div>
+
+  <!-- ==================== GATE / LOGIN VIEW (If not verified employee) ==================== -->
+  <div id="login-view" class="tab-view active">
+    <section class="ms-hero" aria-hidden="true">
+      <div class="ms-glow"></div>
+      <div class="ms-wordmark">
+        <img src="/assets/workspace-logo.png" alt="" class="ms-mark">
+        <span>Manas<em>tej</em></span>
+      </div>
+      <div class="ms-hero-copy">
+        <p class="ms-eyebrow">MANASTEJ <span>·</span> STAFF</p>
+        <h2>A workspace for<br><em>the people behind Manastej.</em></h2>
+        <p>Staff sign-in for the Manastej workforce portal.</p>
+        <ul class="ms-pillars">
+          <li><b>Attendance</b><span>Clock in, shifts, and your own logs</span></li>
+          <li><b>Leave</b><span>Requests stay on your own record</span></li>
+          <li><b>Pipeline</b><span>Opened only for authorized staff</span></li>
+        </ul>
+      </div>
+      <p class="ms-hero-foot">Manastej staff</p>
+    </section>
+    <section class="ms-access" aria-labelledby="login-heading">
+      <div class="ms-card">
+        <img src="/assets/workspace-logo.png" alt="" class="ms-card-logo">
+        <p class="ms-kicker">Staff portal</p>
+        <h1 id="login-heading">Sign in</h1>
+        <p class="ms-lead" id="login-lead">Enter your work email.</p>
+        <form onsubmit="handleEmployeeLogin(event)">
+          <div class="ms-field">
+            <label for="login-id">Work email</label>
+            <input type="email" id="login-id" placeholder="name@manastej.com" required autocomplete="username" oninput="onLoginIdentityInput()">
+          </div>
+          <div class="ms-field" id="password-group" hidden>
+            <label for="login-password" id="password-label">Password</label>
+            <input type="password" id="login-password" placeholder="Your password" autocomplete="current-password" oninput="updateStrength()">
+            <div class="ms-strength" id="strength-wrap" hidden>
+              <div class="ms-bars" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <p class="ms-strength-text" id="strength-text">Enter a password</p>
+              <ul class="ms-rules" id="password-rules">
+                <li data-rule="length">At least 10 characters</li>
+                <li data-rule="email">Not your email address</li>
+                <li data-rule="case">Upper and lower case letters</li>
+                <li data-rule="number">A number</li>
+                <li data-rule="symbol">A symbol</li>
+              </ul>
+            </div>
+          </div>
+          <div class="ms-field" id="confirm-group" hidden>
+            <label for="login-confirm">Confirm password</label>
+            <input type="password" id="login-confirm" placeholder="Type it again" autocomplete="new-password" oninput="updateStrength()">
+            <p class="ms-hint" id="match-hint">Type the same password again.</p>
+          </div>
+          <div class="ms-field" id="setup-group" hidden>
+            <label for="login-setup">First-login code</label>
+            <input type="password" id="login-setup" autocomplete="off">
+            <p class="ms-hint">Enter the setup code you were given for this account.</p>
+          </div>
+          <button type="submit" id="btn-login" class="ms-submit">Continue</button>
+          <div id="login-error" class="ms-error" role="alert"></div>
+        </form>
+        <p class="ms-foot">Staff access only.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==================== MAIN AUTHENTICATED APP SHELL ==================== -->
+  <div id="app-shell" style="display: none;">
+    
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="brand-group">
+        <img src="/assets/workspace-logo.png" alt="Manastej" class="brand-logo">
+        <div>
+          <div class="brand-title">Manastej Staff</div>
+          <div class="brand-sub">Workforce Portal</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a id="pipeline-link" href="/#/hiring" style="display:none; background:#1e264b; color:white; font-size:0.75rem; font-weight:700; padding:6px 10px; border-radius:8px; text-decoration:none;">Hiring</a>
+        <button class="btn-secondary" style="padding: 6px 10px; border-radius: 8px; font-size: 0.75rem;" onclick="handleLogout()" title="Log Out">
+          Log Out
+        </button>
+      </div>
+    </header>
+
+    <main class="app-container">
+      <div id="admin-reset" style="display:none; margin:0 0 16px; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:12px;">
+        <div style="font-size:0.78rem; font-weight:700; color:#1e293b; margin-bottom:6px;">Admin: let someone choose a new password</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <input id="reset-email" class="form-control" style="flex:1; min-width:220px;" placeholder="haresh.sainath@manastej.com">
+          <button type="button" class="btn-secondary" style="padding:8px 12px; border-radius:8px;" onclick="clearSavedPassword()">Clear saved password</button>
+        </div>
+        <div id="reset-msg" style="display:none; margin-top:8px; font-size:0.75rem;"></div>
+      </div>
+
+      <!-- ==================== TAB 1: TIME TRACKER ==================== -->
+      <section id="tab-tracker" class="tab-view active">
+        <!-- NDA Compliance Banner for Joined Employee -->
+        <p id="desk-load-error" role="alert" hidden style="margin:0 0 12px; padding:10px 12px; border-radius:10px; background:#fff7ed; color:#9a3412; font-size:0.82rem;"></p>
+        <div id="emp-nda-banner" style="display:none; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:12px 16px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.2rem;">📜</span>
+              <div>
+                <div style="font-size:0.85rem; font-weight:700; color:#92400e;">Action Required: Mutual NDA Pending Signature</div>
+                <div style="font-size:0.75rem; color:#b45309; margin-top:2px;">Please review and electronically sign your mutual confidentiality agreement via Odoo Enterprise.</div>
+              </div>
+            </div>
+            <a id="emp-nda-sign-btn" href="javascript:void(0)" onclick="alert('Please check your registered email for your personal 1-click Odoo NDA signing link.')" target="_blank" style="background:#0284c7; color:white; font-size:0.78rem; font-weight:700; padding:6px 14px; border-radius:6px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+              <span>✍️ Sign on Odoo ↗</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Clock Hero Card -->
+        <div class="clock-hero">
+          <div id="live-time" class="live-time">00:00:00</div>
+          <div id="live-date" class="live-date">Loading date...</div>
+          
+          <div id="shift-badge-container">
+            <div class="shift-status-pill">
+              <span id="pulse-indicator" class="pulse-dot" style="background:#94a3b8; animation:none;"></span>
+              <span id="shift-status-text">Off Duty</span>
+            </div>
+          </div>
+
+          <div id="stopwatch-wrap" style="display: none;">
+            <div id="stopwatch-timer" class="stopwatch-display">00h 00m 00s</div>
+            <div id="shift-started-at" style="font-size: 0.75rem; color: #ccfbf1; margin-top: 6px;">Started at --:--</div>
+          </div>
+        </div>
+
+        <!-- Clock Action Controls -->
+        <div class="card">
+          <div id="clock-in-panel">
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 12px;">Start Your Work Shift</h3>
+            <div class="form-group">
+              <label class="form-label">Working Mode</label>
+              <select id="work-mode-select" class="form-control">
+                <option value="Remote / WFH">🏠 Remote / Work From Home</option>
+                <option value="Flexible Remote">🕒 Flexible Evening Slot</option>
+                <option value="On-Site / Office">🏢 Office / Barrackpore</option>
+                <option value="Client / Clinical Assessment">🩺 Clinical / Project Site</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Today's Focus / Key Tasks (Optional)</label>
+              <input type="text" id="work-focus-input" class="form-control" placeholder="e.g. Clinical intake reviews, API development">
+            </div>
+            <button type="button" class="btn-action btn-clock-in" onclick="submitClockIn()">
+              <span>🟢 Clock In &amp; Begin Shift</span>
+            </button>
+          </div>
+
+          <div id="clock-out-panel" style="display: none;">
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">Active Work Shift in Progress</h3>
+            <p style="font-size: 0.82rem; color: #64748b; margin-bottom: 16px;">
+              Your time is currently being recorded. When you are ready to conclude work, summarize your deliverables below.
+            </p>
+            <div class="form-group">
+              <label class="form-label">Deliverables &amp; Tasks Completed Today *</label>
+              <textarea id="work-summary-input" class="form-control" rows="3" placeholder="Brief summary of tasks accomplished during this shift..."></textarea>
+            </div>
+            <button type="button" class="btn-action btn-clock-out" onclick="submitClockOut()">
+              <span>🔴 Clock Out &amp; Complete Shift</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Summary Cards -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="card" style="padding: 16px; text-align: center;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Shifts Logged</div>
+            <div id="stat-total-shifts" style="font-size: 1.6rem; font-weight: 800; color: var(--primary); margin-top: 4px;">0</div>
+          </div>
+          <div class="card" style="padding: 16px; text-align: center;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Approved Leaves</div>
+            <div id="stat-approved-leaves-tracker" style="font-size: 1.6rem; font-weight: 800; color: #10b981; margin-top: 4px;">0</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== INTERN WORKFORCE DIRECTORY ==================== -->
+      <section id="tab-workforce" class="tab-view">
+        <header class="portal-section-heading"><h2>Workforce</h2><p>See the active team and how roles are grouped by department.</p></header>
+        <div class="card"><div id="intern-workforce-list" class="team-directory-list"><p class="team-empty">Loading workforce…</p></div></div>
+      </section>
+
+      <!-- ==================== TAB 2: LEAVE MANAGEMENT ==================== -->
+      <section id="tab-leaves" class="tab-view">
+        <header class="portal-section-heading"><h2>Time away</h2><p>Plan time off and follow each request from submission through review.</p></header>
+        <div class="leave-overview" aria-label="Leave request summary">
+          <div class="leave-stat"><span>Awaiting review</span><strong id="stat-pending-leaves">0</strong></div>
+          <div class="leave-stat"><span>Approved</span><strong id="stat-approved-leaves">0</strong></div>
+          <div class="leave-stat"><span>Requests</span><strong id="stat-total-leaves">0</strong></div>
+        </div>
+        <div class="leave-layout">
+          <section class="card" aria-labelledby="leave-request-heading">
+            <h3 id="leave-request-heading" style="font-size: 1rem; font-weight: 700; color: #173b37; margin-bottom: 5px;">Request time away</h3>
+            <p class="rbac-muted" style="margin-bottom:14px;">Your dates and reason are sent to the leave reviewer. You can check the decision below.</p>
+            <form onsubmit="submitLeaveApplication(event)">
+              <div class="form-group"><label class="form-label" for="leave-type-select">Type of leave</label>
+                <select id="leave-type-select" class="form-control" required>
+                  <option value="Casual Leave (CL)">Casual leave</option><option value="Sick / Medical Leave (SL)">Sick / medical leave</option>
+                  <option value="Academic / Exam Leave">Academic / exam leave</option><option value="Emergency Leave">Emergency leave</option><option value="Compensatory Off">Compensatory off</option>
+                </select>
+              </div>
+              <div class="leave-form-grid">
+                <div class="form-group"><label class="form-label" for="leave-start-date">From</label><input type="date" id="leave-start-date" class="form-control" required onchange="updateLeaveDaysPreview()"></div>
+                <div class="form-group"><label class="form-label" for="leave-end-date">Through</label><input type="date" id="leave-end-date" class="form-control" required onchange="updateLeaveDaysPreview()"></div>
+              </div>
+              <div id="leave-duration-preview" class="rbac-muted" style="margin:-2px 0 12px;">Duration: 1 day</div>
+              <div class="form-group"><label class="form-label" for="leave-reason-input">Note for reviewer</label><textarea id="leave-reason-input" class="form-control" rows="3" maxlength="1000" placeholder="Add any context your reviewer should know" required></textarea></div>
+              <button type="submit" id="btn-submit-leave" class="btn-action btn-clock-in">Send request</button>
+            </form>
+          </section>
+          <section class="card" aria-labelledby="leave-history-heading">
+            <div class="team-card-head"><div><h3 id="leave-history-heading" style="font-size:1rem;font-weight:700;color:#173b37;">Your requests</h3><p class="rbac-muted" style="margin-top:4px;">Recent requests and reviewer notes</p></div></div>
+            <div id="leaves-list-container" class="leave-feed"><p class="team-empty">Loading your requests…</p></div>
+          </section>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 3: SHIFT HISTORY ==================== -->
+      <section id="tab-shifts" class="tab-view">
+        <div style="margin-bottom: 16px;">
+          <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">My Attendance Logs</h2>
+          <p style="font-size: 0.78rem; color: #64748b;">Verified timestamps and logged work hours</p>
+        </div>
+
+        <div class="card">
+          <div id="shifts-history-container">
+            <p style="font-size: 0.82rem; color: #94a3b8; text-align: center; padding: 20px 0;">Loading shift history...</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 4: PROFILE ==================== -->
+      <section id="tab-profile" class="tab-view">
+        <header class="portal-section-heading"><h2>My profile</h2><p>Your account details, documents, and support.</p></header>
+        <div class="card profile-card">
+          <div class="profile-identity-row">
+            <div class="profile-avatar" aria-hidden="true"><span id="profile-initials">M</span></div>
+            <div class="profile-identity-copy">
+              <div class="profile-name-line"><h2 id="profile-name">Employee Name</h2><span id="profile-status" class="profile-status-chip">Active</span></div>
+              <p id="profile-role" class="profile-role">Role Title</p>
+              <div id="profile-dept" class="profile-dept">Department</div>
+            </div>
+          </div>
+          <dl class="profile-meta-grid">
+            <div class="profile-meta-item"><dt>Employee ID</dt><dd id="profile-emp-id">EMP000</dd></div>
+            <div class="profile-meta-item"><dt>Joining date</dt><dd id="profile-joining">--</dd></div>
+            <div class="profile-meta-item"><dt>Email</dt><dd id="profile-email">--</dd></div>
+          </dl>
+        </div>
+
+        <div class="card" id="profile-work">
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">My work</h3>
+          <p id="profile-work-rule" style="font-size: 0.76rem; color: #64748b; margin-bottom: 10px;">Start a task and submit it for review. Only Daliya confirms it as done or sends it back.</p>
+          <div id="profile-task-list">
+            <p style="font-size: 0.82rem; color: #94a3b8; text-align: center; padding: 12px 0;">Loading your tasks from the server...</p>
+          </div>
+        </div>
+
+        <div class="card" id="profile-documents">
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">My documents</h3>
+          <p id="profile-documents-note" class="rbac-muted" style="margin-bottom:12px;">Your employee documents and files you upload are shown here.</p>
+          <div id="employee-document-checklist" class="document-checklist" aria-live="polite">
+            <div class="team-empty">Loading your document checklist…</div>
+          </div>
+          <form onsubmit="uploadEmployeeDocument(event)" style="display:grid;gap:10px;margin-bottom:14px;">
+            <label class="form-label" for="employee-document-category">Document type</label>
+            <select id="employee-document-category" class="form-control">
+              <option value="Signed Offer Letter">Signed offer letter</option>
+              <option value="Mutual NDA Agreement">Mutual NDA agreement</option>
+              <option value="Aadhaar Card">Aadhaar card</option>
+              <option value="PAN Card">PAN card</option>
+              <option value="Bank Passbook / Cheque">Bank passbook or cheque</option>
+              <option value="Other">Other document</option>
+            </select>
+            <label class="form-label" for="employee-document-file">Choose a PDF, image, or document (max 10 MB)</label>
+            <input id="employee-document-file" class="form-control" type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.txt" required>
+            <button type="submit" id="employee-document-upload" class="btn-action btn-secondary" style="padding:10px 14px;">Upload document</button>
+          </form>
+          <div class="document-upload-heading"><h4>Your uploaded files</h4><span id="employee-documents-count" class="document-upload-count">Loading…</span></div>
+          <div id="employee-documents-list" class="team-task-list"><p class="team-empty">Loading your documents…</p></div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 12px;">App &amp; HR Support</h3>
+          <div style="font-size: 0.82rem; color: #475569; line-height: 1.5;">
+            Need help with attendance, work schedule, or documents? Reach out directly to HR Operations:
+          </div>
+          <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <a href="mailto:hr@manastej.com" class="btn-action btn-secondary" style="font-size: 0.82rem; padding: 10px; text-decoration: none;">
+              ✉️ Email HR: hr@manastej.com
+            </a>
+            <a href="https://manastej.odoo.com/odoo" target="_blank" class="btn-action btn-secondary" style="font-size: 0.82rem; padding: 10px; text-decoration: none;">
+              🏛️ Manastej Odoo Enterprise Portal
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TEAM (core team and leads) ==================== -->
+      <section id="tab-team" class="tab-view">
+        <header class="portal-section-heading"><h2>Team workspace</h2><p>Assign work, follow live progress, and browse colleagues by department.</p></header>
+        <div class="team-overview" aria-label="Team task summary">
+          <div class="team-stat"><span>Open tasks</span><strong id="team-open-count">0</strong></div>
+          <div class="team-stat"><span>In review</span><strong id="team-review-count">0</strong></div>
+          <div class="team-stat"><span>Completed</span><strong id="team-done-count">0</strong></div>
+        </div>
+        <div class="card">
+          <h3 style="font-size: 1rem; font-weight: 700; color: #173b37; margin-bottom: 10px;">Create and assign</h3>
+          <form onsubmit="assignTeamTask(event)">
+            <div class="form-group">
+              <label class="form-label" for="team-task-person">Person</label>
+              <select id="team-task-person" class="form-control" required></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="team-task-title">Task</label>
+              <input id="team-task-title" class="form-control" required maxlength="160" placeholder="What needs doing">
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div class="form-group">
+                <label class="form-label" for="team-task-priority">Priority</label>
+                <select id="team-task-priority" class="form-control"><option>Medium</option><option>High</option><option>Low</option></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="team-task-due">Due</label>
+                <input id="team-task-due" type="date" class="form-control">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="team-task-desc">Details (optional)</label>
+              <textarea id="team-task-desc" class="form-control" rows="2"></textarea>
+            </div>
+            <button type="submit" class="btn-action btn-clock-in">Assign task</button>
+          </form>
+        </div>
+        <section class="card" aria-labelledby="team-tasks-heading">
+          <div class="team-card-head"><div><h3 id="team-tasks-heading" style="font-size:1rem;font-weight:700;color:#173b37;">Team tasks</h3><p class="rbac-muted" style="margin-top:4px;">Progress is saved on the staff server.</p></div><button type="button" class="btn-action btn-secondary" style="width:auto;padding:7px 11px;" onclick="loadTeamDesk()">Refresh</button></div>
+          <div class="team-filters"><input class="form-control" id="team-task-search" type="search" placeholder="Search tasks or people" oninput="renderTeamTasks()"><select class="form-control" id="team-task-status-filter" onchange="renderTeamTasks()"><option value="all">All statuses</option><option>Pending</option><option>In Progress</option><option>Pending Review</option><option>Completed</option></select></div>
+          <div id="team-task-list" class="team-task-list"><p class="team-empty">Loading assigned work…</p></div>
+        </section>
+        <section class="card" aria-labelledby="team-directory-heading">
+          <div class="team-card-head"><div><h3 id="team-directory-heading" style="font-size:1rem;font-weight:700;color:#173b37;">People by department</h3><p class="rbac-muted" style="margin-top:4px;">Staff directory · private contact details stay restricted.</p></div></div>
+          <div id="team-directory-list" class="team-directory-list"><p class="team-empty">Loading directory…</p></div>
+        </section>
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">Applicants</h3>
+            <select id="team-applicant-filter" class="form-control" style="width:auto; padding:6px 8px;" onchange="renderTeamApplicants()">
+              <option value="">All roles</option><option value="tech">Tech</option><option value="psych">Psychologists</option><option value="marketing">Marketing</option><option value="hr">HR</option>
+            </select>
+          </div>
+          <div class="rbac-scroll"><table class="rbac-table">
+            <thead><tr><th>Name</th><th>Role</th><th>Fit</th><th>Stage</th><th>Skills</th></tr></thead>
+            <tbody id="team-applicants"><tr><td colspan="5" class="rbac-muted">Loading...</td></tr></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- ==================== INTEGRITY (super admin and tech lead only) ==================== -->
+      <section id="tab-integrity" class="tab-view">
+        <div style="margin-bottom: 16px;">
+          <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">Clock-in integrity</h2>
+          <p class="rbac-muted" id="integrity-rule">Shifts stop automatically after a period with no activity. Only the Super Admin and Tech Lead can see this page.</p>
+        </div>
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">Clocked in now</h3>
+            <button type="button" class="btn-secondary" style="padding:6px 10px; border-radius:8px; font-size:0.75rem;" onclick="loadIntegrity()">Refresh</button>
+          </div>
+          <div class="rbac-scroll"><table class="rbac-table">
+            <thead><tr><th>Person</th><th>Since</th><th>Last active</th><th>Heartbeats</th></tr></thead>
+            <tbody id="integrity-live"><tr><td colspan="4" class="rbac-muted">Loading...</td></tr></tbody>
+          </table></div>
+        </div>
+        <div class="card">
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">Automatic clock-outs</h3>
+          <div class="rbac-scroll"><table class="rbac-table">
+            <thead><tr><th>Person</th><th>Shift</th><th>Stopped at</th><th>Why</th><th>Idle</th></tr></thead>
+            <tbody id="integrity-events"><tr><td colspan="5" class="rbac-muted">Loading...</td></tr></tbody>
+          </table></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <button class="nav-tab active" onclick="switchTab('tab-tracker', this)">
+        <span class="nav-icon">⏱️</span>
+        <span>Tracker</span>
+      </button>
+      <button class="nav-tab" id="nav-leaves" onclick="switchTab('tab-leaves', this)">
+        <span class="nav-icon">📅</span>
+        <span>Leaves</span>
+      </button>
+      <button class="nav-tab" id="nav-workforce" style="display:none" onclick="switchTab('tab-workforce', this); loadInternWorkforce();">
+        <span class="nav-icon">👥</span>
+        <span>Workforce</span>
+      </button>
+      <button class="nav-tab" onclick="switchTab('tab-shifts', this)">
+        <span class="nav-icon">📊</span>
+        <span>My Logs</span>
+      </button>
+      <button class="nav-tab" onclick="switchTab('tab-profile', this)">
+        <span class="nav-icon">👤</span>
+        <span>Profile</span>
+      </button>
+      <button class="nav-tab" id="nav-team" style="display:none" onclick="switchTab('tab-team', this); loadTeamDesk();">
+        <span class="nav-icon">🧭</span>
+        <span>Team</span>
+      </button>
+      <button class="nav-tab" id="nav-integrity" style="display:none" onclick="switchTab('tab-integrity', this); loadIntegrity();">
+        <span class="nav-icon">🛡️</span>
+        <span>Integrity</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- PWA Service Worker Registration & App Logic -->
+  <script>
+    let currentEmployee = null;
+    let stopwatchInterval = null;
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW reg error:', err));
+      });
+    }
+
+    // Toast helper
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
+    let localClock = WorkspaceClock.snapshot();
+    function updateClock() {
+      const now = localClock();
+      const timeStr = WorkspaceClock.formatTime(now);
+      const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+      
+      const timeElem = document.getElementById('live-time');
+      const dateElem = document.getElementById('live-date');
+      if (timeElem) timeElem.innerText = timeStr;
+      if (dateElem) dateElem.innerText = dateStr;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Check Local Storage for Existing Session
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSession();
+    });
+
+    let loginIdentity = '';
+    let loginMode = '';
+
+    function buttonLabel() {
+      if (loginMode === 'setup') return 'Save password';
+      if (loginMode === 'signin') return 'Sign in';
+      return 'Continue';
+    }
+
+    function scorePassword(password, email) {
+      const value = password || '';
+      const id = (email || '').trim().toLowerCase();
+      const local = id.split('@')[0] || '';
+      const lowered = value.trim().toLowerCase();
+      const rules = {
+        length: value.length >= 10,
+        case: /[a-z]/.test(value) && /[A-Z]/.test(value),
+        number: /\d/.test(value),
+        symbol: /[^A-Za-z0-9]/.test(value),
+        email: value.length > 0 && lowered !== id && lowered !== local
+      };
+      const longEnough = value.length >= 14;
+      let level = 0;
+      let text = 'Enter a password';
+      if (!value) {
+        level = 0;
+        text = 'Enter a password';
+      } else if (!rules.length) {
+        level = 1;
+        text = 'Too short. Use at least 10 characters.';
+      } else if (!rules.email) {
+        level = 1;
+        text = 'Do not use your email as the password.';
+      } else {
+        const extras = [rules.case, rules.number, rules.symbol, longEnough].filter(Boolean).length;
+        if (extras >= 4) {
+          level = 4;
+          text = 'Strong';
+        } else if (extras >= 2) {
+          level = 3;
+          text = 'Good';
+        } else {
+          level = 2;
+          text = 'Fair. Add upper and lower case, a number, and a symbol.';
+        }
+      }
+      return { rules, level, text };
+    }
+
+    function updateStrength() {
+      const wrap = document.getElementById('strength-wrap');
+      if (!wrap || wrap.hidden) return;
+      const password = document.getElementById('login-password').value;
+      const result = scorePassword(password, document.getElementById('login-id').value);
+      wrap.dataset.level = String(result.level);
+      document.getElementById('strength-text').textContent = result.text;
+      wrap.querySelectorAll('.ms-bars span').forEach((bar, index) => {
+        bar.classList.toggle('on', index < result.level);
+      });
+      wrap.querySelectorAll('[data-rule]').forEach((item) => {
+        item.classList.toggle('ok', !!result.rules[item.dataset.rule]);
+      });
+      const confirmValue = document.getElementById('login-confirm').value;
+      const match = document.getElementById('match-hint');
+      if (!confirmValue) {
+        match.textContent = 'Type the same password again.';
+        match.className = 'ms-hint';
+      } else if (confirmValue === password) {
+        match.textContent = 'Passwords match.';
+        match.className = 'ms-hint ok';
+      } else {
+        match.textContent = 'Passwords do not match yet.';
+        match.className = 'ms-hint bad';
+      }
+    }
+
+    function setLoginMode(mode) {
+      loginMode = mode;
+      const passwordGroup = document.getElementById('password-group');
+      const confirmGroup = document.getElementById('confirm-group');
+      const setupGroup = document.getElementById('setup-group');
+      const strength = document.getElementById('strength-wrap');
+      const password = document.getElementById('login-password');
+      const label = document.getElementById('password-label');
+      const lead = document.getElementById('login-lead');
+      const heading = document.getElementById('login-heading');
+      const button = document.getElementById('btn-login');
+      passwordGroup.hidden = mode !== 'signin' && mode !== 'setup';
+      confirmGroup.hidden = mode !== 'setup';
+      strength.hidden = mode !== 'setup';
+      if (mode !== 'setup') setupGroup.hidden = true;
+      password.required = mode === 'signin' || mode === 'setup';
+      password.autocomplete = mode === 'setup' ? 'new-password' : 'current-password';
+      password.placeholder = mode === 'setup' ? 'Choose a password' : 'Your password';
+      label.textContent = mode === 'setup' ? 'New password' : 'Password';
+      button.textContent = buttonLabel();
+      if (mode === 'signin') {
+        heading.textContent = 'Sign in';
+        lead.textContent = 'Enter the password for this account.';
+        password.focus();
+      } else if (mode === 'setup') {
+        heading.textContent = 'Create password';
+        lead.textContent = 'This account has no password yet. Choose one.';
+        updateStrength();
+        password.focus();
+      } else {
+        heading.textContent = 'Sign in';
+        lead.textContent = 'Enter your work email.';
+        password.value = '';
+        document.getElementById('login-confirm').value = '';
+        document.getElementById('login-setup').value = '';
+        password.required = false;
+      }
+    }
+
+    function onLoginIdentityInput() {
+      const current = document.getElementById('login-id').value.trim().toLowerCase();
+      if (loginIdentity && current !== loginIdentity) {
+        loginIdentity = '';
+        setLoginMode('');
+      }
+    }
+
+    function showLoginGate() {
+      const view = document.getElementById('login-view');
+      view.style.display = '';
+      view.classList.add('active');
+      document.body.classList.add('login-open');
+    }
+
+    function showLoginError(message) {
+      const errBox = document.getElementById('login-error');
+      errBox.textContent = message;
+      errBox.style.display = 'block';
+    }
+
+    // Employee Login Handler
+    async function handleEmployeeLogin(e) {
+      e.preventDefault();
+      const idInput = document.getElementById('login-id').value.trim();
+      const password = document.getElementById('login-password').value;
+      const confirm = document.getElementById('login-confirm').value;
+      const setupToken = document.getElementById('login-setup').value;
+      const btn = document.getElementById('btn-login');
+      const errBox = document.getElementById('login-error');
+      if (!idInput) return;
+      errBox.style.display = 'none';
+      if (loginMode && idInput.toLowerCase() === loginIdentity && !password) return;
+      btn.disabled = true;
+
+      if (!loginMode || idInput.toLowerCase() !== loginIdentity) {
+        btn.textContent = 'Checking account...';
+        try {
+          const res = await fetch('/api/auth/lookup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identifier: idInput })
+          });
+          const data = await res.json();
+          if (!data.success) {
+            showLoginError(data.message || 'This work email is not set up for staff sign-in.');
+            return;
+          }
+          loginIdentity = idInput.toLowerCase();
+          setLoginMode(data.mode === 'signin' ? 'signin' : 'setup');
+          if (data.needs_setup_token) document.getElementById('setup-group').hidden = false;
+        } catch (err) {
+          showLoginError('Could not reach the sign-in service. Try again.');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = buttonLabel();
+        }
+        return;
+      }
+
+      if (loginMode === 'setup') {
+        const check = scorePassword(password, idInput);
+        if (!check.rules.length || !check.rules.email) {
+          btn.disabled = false;
+          btn.textContent = buttonLabel();
+          showLoginError(check.text);
+          return;
+        }
+        if (password !== confirm) {
+          btn.disabled = false;
+          btn.textContent = buttonLabel();
+          showLoginError('Type the same password in both fields.');
+          return;
+        }
+      }
+
+      btn.textContent = loginMode === 'setup' ? 'Saving password...' : 'Signing in...';
+      try {
+        const res = await fetch('/api/employee/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: idInput, password: password, confirm: confirm, setup_token: setupToken })
+        });
+        const data = await res.json();
+        if (data.success) {
+          currentEmployee = data.employee;
+          localStorage.setItem('manastej_employee', JSON.stringify(currentEmployee));
+          document.getElementById('login-password').value = '';
+          setLoginMode('');
+          showToast(`Welcome, ${currentEmployee.full_name}!`);
+          renderAppForEmployee();
+        } else {
+          showLoginError(data.message || 'Access denied.');
+          if (data.needs_password && loginMode !== 'setup') {
+            setLoginMode('setup');
+          }
+          if (data.needs_setup_token) {
+            document.getElementById('setup-group').hidden = false;
+            document.getElementById('login-setup').focus();
+          }
+        }
+      } catch (err) {
+        showLoginError('Could not reach the sign-in service. Try again.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = buttonLabel();
+      }
+    }
+
+    async function loadSession() {
+      try {
+        const res = await fetch('/api/auth/session');
+        const data = await res.json();
+        if (data.success && data.employee) {
+          currentEmployee = data.employee;
+          localStorage.setItem('manastej_employee', JSON.stringify(currentEmployee));
+          renderAppForEmployee();
+        } else {
+          localStorage.removeItem('manastej_employee');
+        }
+      } catch (e) {
+        console.error('Session verify error:', e);
+      }
+    }
+
+    function viewFor(employee) {
+      // rbac.portal_view is the source of truth. portal_role is only a fallback
+      // for a session payload from a server that has not sent portal_view yet.
+      if (!employee) return '';
+      if (employee.portal_view === 'intern' || employee.portal_view === 'staff') return employee.portal_view;
+      const role = String(employee.portal_role || employee.access || '').toLowerCase();
+      if (!role) return '';
+      return (role === 'intern' || role === 'employee') ? 'intern' : 'staff';
+    }
+
+    function showNav(id, on) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = on ? 'flex' : 'none';
+    }
+
+    function applyPortalChrome() {
+      const isIntern = viewFor(currentEmployee) === 'intern';
+      document.body.classList.toggle('intern-portal', isIntern);
+      document.body.classList.toggle('staff-portal', !isIntern);
+      const tracker = document.getElementById('tab-tracker');
+      if (tracker) tracker.classList.toggle('intern-view', isIntern);
+      showNav('nav-team', !isIntern && can('tasks.assign'));
+      showNav('nav-integrity', !isIntern && can('integrity.view'));
+      showNav('nav-leaves', !isIntern && can('leave.apply'));
+      showNav('nav-workforce', isIntern);
+      const work = document.getElementById('profile-work');
+      if (work) work.style.display = (!isIntern && can('tasks.view_own')) ? 'block' : 'none';
+      const note = document.getElementById('profile-documents-note');
+      if (note) {
+        note.textContent = isIntern
+          ? 'Only files you upload here are visible in your document list.'
+          : 'Your employee documents and files you upload are shown here.';
+      }
+      const pipelineLink = document.getElementById('pipeline-link');
+      if (pipelineLink) pipelineLink.style.display = (!isIntern && currentEmployee.can_view_pipeline) ? 'inline-flex' : 'none';
+      const adminReset = document.getElementById('admin-reset');
+      if (adminReset) adminReset.style.display = (!isIntern && can('users.manage')) ? 'block' : 'none';
+      const active = document.querySelector('.tab-view.active');
+      const staffOnly = active && ['tab-team', 'tab-integrity', 'tab-leaves'].includes(active.id);
+      if ((isIntern && staffOnly) || (!isIntern && active && active.id === 'tab-workforce')) {
+        switchTab('tab-tracker', document.querySelector('.bottom-nav .nav-tab'));
+      }
+      return isIntern;
+    }
+
+    function renderAppForEmployee() {
+      const view = viewFor(currentEmployee);
+      if (!view) {
+        showLoginGate();
+        showLoginError('This account has no portal role. Ask HR to check the roster.');
+        return;
+      }
+      document.getElementById('login-view').classList.remove('active');
+      document.getElementById('login-view').style.display = 'none';
+      document.body.classList.remove('login-open');
+      document.getElementById('app-shell').style.display = 'block';
+
+      document.getElementById('profile-name').innerText = currentEmployee.full_name;
+      document.getElementById('profile-role').innerText = currentEmployee.role;
+      document.getElementById('profile-dept').innerText = currentEmployee.department;
+      document.getElementById('profile-emp-id').innerText = currentEmployee.employee_id;
+      document.getElementById('profile-joining').innerText = currentEmployee.joining_date || '--';
+      document.getElementById('profile-email').innerText = currentEmployee.email || '--';
+      document.getElementById('profile-status').innerText = currentEmployee.status || 'Active';
+
+      const initials = String(currentEmployee.full_name || '').split(' ').filter(Boolean).map(w => w[0]).join('').substring(0, 2).toUpperCase();
+      document.getElementById('profile-initials').innerText = initials || 'M';
+      const isIntern = applyPortalChrome();
+      if (currentEmployee.portal_role_label) {
+        document.getElementById('profile-role').innerText = `${currentEmployee.role || ''} · ${currentEmployee.portal_role_label}`.replace(/^ · /, '');
+      }
+      const next = new URLSearchParams(window.location.search).get('next');
+      if (!isIntern && currentEmployee.can_view_pipeline && /^\/(?:#\/[a-z/]+)?$/.test(next || '')) {
+        window.location.replace(next);
+        return;
+      }
+      if (!isIntern && location.hash === '#integrity' && can('integrity.view')) {
+        switchTab('tab-integrity', document.getElementById('nav-integrity'));
+        loadIntegrity();
+      }
+
+      const ndaBanner = document.getElementById('emp-nda-banner');
+      const ndaBtn = document.getElementById('emp-nda-sign-btn');
+      const ndaStatus = (currentEmployee.nda_status || '').toLowerCase();
+      if (ndaBanner) {
+        if (!isIntern && !ndaStatus.includes('signed')) {
+          ndaBanner.style.display = 'block';
+          if (ndaBtn) ndaBtn.href = currentEmployee.nda_sign_link || 'javascript:void(0)';
+        } else {
+          ndaBanner.style.display = 'none';
+        }
+      }
+
+      loadEmployeeDocuments();
+      fetchEmployeeStatus();
+    }
+
+    async function loadEmployeeDocuments() {
+      const root = document.getElementById('employee-documents-list');
+      const checklistRoot = document.getElementById('employee-document-checklist');
+      const countRoot = document.getElementById('employee-documents-count');
+      if (!root || !currentEmployee) return;
+      root.innerHTML = '<p class="team-empty">Loading your documents…</p>';
+      if (checklistRoot) checklistRoot.innerHTML = '<div class="team-empty">Loading your document checklist…</div>';
+      if (countRoot) countRoot.textContent = 'Loading…';
+      try {
+        const response = await fetch('/api/employee/documents');
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'Could not load documents.');
+        const docs = Array.isArray(data.documents) ? data.documents : [];
+        if (countRoot) countRoot.textContent = `${docs.length} ${docs.length === 1 ? 'file' : 'files'}`;
+        const checklist = Array.isArray(data.checklist) ? data.checklist : [];
+        if (checklistRoot) {
+          const completed = Number(data.completed_count) || 0;
+          const total = Number(data.total_required) || checklist.length;
+          const percent = total ? Math.max(0, Math.min(100, Math.round((completed / total) * 100))) : 0;
+          const remaining = Math.max(0, total - completed);
+          const summary = remaining === 0 ? 'Everything on the list is uploaded.' : `${remaining} ${remaining === 1 ? 'item' : 'items'} still to upload.`;
+          checklistRoot.innerHTML = `<div class="document-checklist-head"><div class="document-checklist-title">Required documents</div><div class="document-checklist-count">${percent}% complete (${completed}/${total})</div></div><div class="document-progress-track" role="progressbar" aria-label="Required documents uploaded" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${completed}"><div class="document-progress-fill" style="width:${percent}%"></div></div><div class="document-checklist-grid" role="list">${checklist.map(item => `<div class="document-check-item ${item.is_received ? 'is-complete' : ''}" role="listitem"><div class="document-check-item-top"><span class="document-check-icon" aria-hidden="true">${esc(item.icon || '📄')}</span><span class="document-check-label">${esc(item.name)}</span></div><div class="document-check-status"><span aria-hidden="true">${item.is_received ? '✓' : '○'}</span><span>${item.is_received ? 'Uploaded' : 'Pending'}</span></div></div>`).join('')}</div><p class="rbac-muted" style="margin:10px 0 0;font-size:.74rem;">${esc(summary)}</p>`;
+        }
+        root.innerHTML = docs.length ? docs.map(doc =>
+          `<article class="team-task-card"><div class="team-card-head"><div><div class="team-task-title">${esc(doc.filename)}</div><div class="team-task-meta">${esc(doc.category)} · ${esc(doc.size_kb)} KB · ${esc(doc.modified_time)}</div></div><a class="btn-action btn-secondary" style="width:auto;padding:7px 11px;font-size:.74rem;text-decoration:none" href="${esc(doc.view_url)}" target="_blank" rel="noopener">View</a></div></article>`
+        ).join('') : '<p class="team-empty">No documents available yet. Upload a file here to keep it with your employee record.</p>';
+      } catch (err) {
+        root.innerHTML = `<p class="team-empty">${esc(err.message || 'Could not load documents.')}</p>`;
+        if (checklistRoot) checklistRoot.innerHTML = `<p class="team-empty">${esc(err.message || 'Could not load your checklist.')}</p>`;
+        if (countRoot) countRoot.textContent = 'Unavailable';
+      }
+    }
+
+    async function uploadEmployeeDocument(event) {
+      event.preventDefault();
+      const input = document.getElementById('employee-document-file');
+      const file = input?.files?.[0];
+      if (!file || !currentEmployee) return;
+      if (file.size > 10 * 1024 * 1024) {
+        showToast('Choose a file smaller than 10 MB.');
+        return;
+      }
+      const button = document.getElementById('employee-document-upload');
+      button.disabled = true;
+      button.textContent = 'Uploading…';
+      try {
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || '').split(',')[1] || '');
+          reader.onerror = () => reject(new Error('The file could not be read.'));
+          reader.readAsDataURL(file);
+        });
+        const response = await fetch('/api/employee/upload_document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            emp_id: currentEmployee.employee_id,
+            name: currentEmployee.full_name,
+            filename: file.name,
+            file_b64: base64,
+            doc_type: document.getElementById('employee-document-category').value,
+          })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'Upload failed.');
+        input.value = '';
+        showToast(data.message || 'Document uploaded.');
+        await loadEmployeeDocuments();
+      } catch (err) {
+        showToast(err.message || 'Document upload failed.');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Upload document';
+      }
+    }
+
+    async function loadInternWorkforce() {
+      const root = document.getElementById('intern-workforce-list');
+      if (!root) return;
+      root.innerHTML = '<p class="team-empty">Loading workforce…</p>';
+      try {
+        const response = await fetch('/api/core/directory');
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'Could not load workforce.');
+        const people = Array.isArray(data.people) ? data.people : [];
+        const groups = new Map();
+        people.forEach(person => {
+          const department = person.department || 'Other';
+          if (!groups.has(department)) groups.set(department, []);
+          groups.get(department).push(person);
+        });
+        root.innerHTML = groups.size ? [...groups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([department, members]) =>
+          `<section><h3 class="team-department">${esc(department)} · ${members.length}</h3>${members.map(person => `<article class="team-person-card"><div class="team-task-title">${esc(person.full_name)}</div><div class="team-person-meta">${esc(person.role)} · Employee ${esc(person.employee_id)}</div></article>`).join('')}</section>`
+        ).join('') : '<p class="team-empty">No active workforce records are available.</p>';
+      } catch (err) {
+        root.innerHTML = `<p class="team-empty">${esc(err.message || 'Could not load workforce.')}</p>`;
+      }
+    }
+
+    async function clearSavedPassword() {
+      const email = document.getElementById('reset-email').value.trim();
+      const msg = document.getElementById('reset-msg');
+      msg.style.display = 'block';
+      if (!email) {
+        msg.innerText = 'Enter their work email.';
+        return;
+      }
+      const res = await fetch('/api/auth/clear-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email })
+      });
+      const data = await res.json();
+      msg.innerText = data.first_login_code
+        ? `${data.message || 'Password reset.'} New first-login code (shown once): ${data.first_login_code}`
+        : (data.message || 'Could not clear that password.');
+    }
+
+    async function handleLogout() {
+      if (!confirm('Are you sure you want to log out of Manastej Staff?')) return;
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch (e) {
+        console.error(e);
+      }
+      localStorage.removeItem('manastej_employee');
+      currentEmployee = null;
+      if (stopwatchInterval) clearInterval(stopwatchInterval);
+      if (window.ActivityHeartbeat) ActivityHeartbeat.stop();
+      document.getElementById('app-shell').style.display = 'none';
+      document.getElementById('login-id').value = '';
+      loginIdentity = '';
+      setLoginMode('');
+      const errBox = document.getElementById('login-error');
+      if (errBox) {
+        errBox.style.display = 'none';
+        errBox.textContent = '';
+      }
+      showLoginGate();
+    }
+
+    function esc(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // UI hints only. The server checks every request against the same permissions.
+    function can(permission) {
+      return !!(currentEmployee && Array.isArray(currentEmployee.permissions) && currentEmployee.permissions.includes(permission));
+    }
+
+    let teamApplicants = [];
+    let teamPeople = [];
+    let teamTasks = [];
+    async function loadTeamDesk() {
+      try {
+        const [dirRes, appRes, taskRes] = await Promise.all([fetch('/api/core/directory'), fetch('/api/core/applicants'), fetch('/api/admin/tasks')]);
+        const dir = await dirRes.json();
+        const apps = await appRes.json();
+        const taskData = await taskRes.json();
+        if (!dir.success || !apps.success || !taskData.success) throw new Error('The team workspace could not load its live records.');
+        const select = document.getElementById('team-task-person');
+        const me = currentEmployee.employee_id;
+        const lead = ['super_admin', 'tech_lead'].includes(currentEmployee.portal_role);
+        teamPeople = dir.people || [];
+        const people = teamPeople.filter(p => lead ? p.portal_role : (p.portal_role === 'intern' || p.employee_id === me));
+        select.innerHTML = people.map(p => {
+          const role = String(p.portal_role || 'staff').replace(/_/g, ' ');
+          return `<option value="${esc(p.employee_id)}">${esc(p.full_name)} · ${esc(role)}</option>`;
+        }).join('')
+          || `<option value="${esc(me)}">Myself</option>`;
+        teamApplicants = apps.applicants || [];
+        teamTasks = taskData.tasks || [];
+        renderTeamApplicants();
+        renderTeamTasks();
+        renderTeamDirectory();
+      } catch (err) {
+        showToast(err.message || 'Could not load the team desk.');
+      }
+    }
+
+    setInterval(() => {
+      if (currentEmployee && document.getElementById('tab-team')?.classList.contains('active')) loadTeamDesk();
+    }, 20000);
+
+    function renderTeamTasks() {
+      const root = document.getElementById('team-task-list');
+      if (!root) return;
+      const statusFilter = document.getElementById('team-task-status-filter')?.value || 'all';
+      const search = (document.getElementById('team-task-search')?.value || '').trim().toLowerCase();
+      const open = teamTasks.filter(t => String(t.Status || 'Pending') !== 'Completed').length;
+      const review = teamTasks.filter(t => String(t.Status || '') === 'Pending Review').length;
+      const done = teamTasks.filter(t => String(t.Status || '') === 'Completed').length;
+      document.getElementById('team-open-count').textContent = String(open);
+      document.getElementById('team-review-count').textContent = String(review);
+      document.getElementById('team-done-count').textContent = String(done);
+      const rows = teamTasks.filter(t => {
+        const status = String(t.Status || 'Pending');
+        if (statusFilter !== 'all' && status !== statusFilter) return false;
+        const haystack = [t['Task Title'], t.Description, t['Employee Name'], t.Department, t.Category].join(' ').toLowerCase();
+        return !search || haystack.includes(search);
+      });
+      if (!rows.length) { root.innerHTML = '<p class="team-empty">No tasks match this view.</p>'; return; }
+      const myIds = currentEmployee?.task_assignee_ids || [currentEmployee?.employee_id];
+      root.innerHTML = rows.map(task => {
+        const id = String(task['Task ID'] || '');
+        const status = String(task.Status || 'Pending');
+        const isMine = myIds.some(value => String(value || '').trim().toLowerCase() === String(task['Employee ID'] || '').trim().toLowerCase());
+        const assignedByMe = myIds.some(value => String(value || '').trim().toLowerCase() === String(task['Assigned By ID'] || '').trim().toLowerCase());
+        const mayReviewTask = currentEmployee?.portal_role === 'super_admin' ||
+          (!isMine && (currentEmployee?.portal_role === 'tech_lead' || (currentEmployee?.portal_role === 'core_team' && assignedByMe)));
+        let actions = '';
+        if (status === 'Pending Review' && mayReviewTask) actions = `<button type="button" class="btn-action btn-clock-in" style="width:auto;padding:6px 10px;font-size:.74rem" onclick="moveMyTask('${esc(id)}','Completed','Confirmed by ${esc(currentEmployee.full_name)}')">Confirm done</button><button type="button" class="btn-action btn-secondary" style="width:auto;padding:6px 10px;font-size:.74rem" onclick="moveMyTask('${esc(id)}','In Progress','Needs more work')">Send back</button>`;
+        else if (status === 'Completed' && mayReviewTask) actions = `<button type="button" class="btn-action btn-secondary" style="width:auto;padding:6px 10px;font-size:.74rem" onclick="moveMyTask('${esc(id)}','In Progress','Reopened')">Reopen</button>`;
+        else if (isMine && status === 'Pending') actions = `<button type="button" class="btn-action btn-clock-in" style="width:auto;padding:6px 10px;font-size:.74rem" onclick="moveMyTask('${esc(id)}','In Progress','Started')">Start</button>`;
+        else if (isMine && status === 'In Progress') actions = `<button type="button" class="btn-action btn-clock-in" style="width:auto;padding:6px 10px;font-size:.74rem" onclick="moveMyTask('${esc(id)}','Pending Review','Submitted for review')">Submit for review</button>`;
+        const meta = [task['Employee Name'], task.Department, task.Priority && `${task.Priority} priority`, task['Due Date'] && `Due ${task['Due Date']}`, status].filter(Boolean).join(' · ');
+        return `<article class="team-task-card"><div class="team-card-head"><div><div class="team-task-title">${esc(task['Task Title'] || 'Untitled task')}</div><div class="team-task-meta">${esc(meta)} · ${esc(id)}</div></div><span class="ms-pill ${status === 'Completed' ? 'ms-pill--ok' : status === 'Pending Review' ? 'ms-pill--wait' : ''}">${esc(status)}</span></div>${task.Description ? `<p class="team-task-meta">${esc(task.Description)}</p>` : ''}${actions ? `<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">${actions}</div>` : ''}</article>`;
+      }).join('');
+    }
+
+    function renderTeamDirectory() {
+      const root = document.getElementById('team-directory-list');
+      if (!root) return;
+      const groups = new Map();
+      teamPeople.forEach(person => {
+        const dept = String(person.department || 'Other').trim() || 'Other';
+        if (!groups.has(dept)) groups.set(dept, []);
+        groups.get(dept).push(person);
+      });
+      if (!groups.size) { root.innerHTML = '<p class="team-empty">No team members are listed.</p>'; return; }
+      root.innerHTML = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([dept, people]) =>
+        `<section><h4 class="team-department">${esc(dept)} · ${people.length}</h4>${people.map(person => `<article class="team-person-card"><div class="team-task-title">${esc(person.full_name || 'Team member')}</div><div class="team-person-meta">${esc(person.role || 'Team member')} · ${esc(String(person.portal_role || 'staff').replace(/_/g, ' '))} · ${esc(person.employee_id || 'ID pending')}</div></article>`).join('')}</section>`
+      ).join('');
+    }
+
+    function renderTeamApplicants() {
+      const filter = document.getElementById('team-applicant-filter').value;
+      const rows = teamApplicants.filter(a => !filter || a.category === filter)
+        .sort((a, b) => (b.fit_score ?? -1) - (a.fit_score ?? -1)).slice(0, 300);
+      document.getElementById('team-applicants').innerHTML = rows.length ? rows.map(a =>
+        `<tr><td style="font-weight:600">${esc(a.name)}</td><td>${esc(a.category)}</td><td>${a.fit_score ?? '-'} ${a.fit_tier ? `<span class="rbac-muted">${esc(a.fit_tier)}</span>` : ''}</td><td>${esc(a.stage)}</td><td class="rbac-muted">${esc(a.skills || a.degree)}</td></tr>`
+      ).join('') : '<tr><td colspan="5" class="rbac-muted">No applicants.</td></tr>';
+    }
+
+    async function assignTeamTask(event) {
+      event.preventDefault();
+      const body = {
+        emp_id: document.getElementById('team-task-person').value,
+        title: document.getElementById('team-task-title').value.trim(),
+        description: document.getElementById('team-task-desc').value.trim(),
+        priority: document.getElementById('team-task-priority').value,
+        due_date: document.getElementById('team-task-due').value,
+        category: 'General'
+      };
+      try {
+        const res = await fetch('/api/admin/tasks/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await res.json();
+        showToast(data.message || (data.success ? 'Task assigned.' : 'Could not assign the task.'));
+        if (data.success) { document.getElementById('team-task-title').value = ''; document.getElementById('team-task-desc').value = ''; await loadTeamDesk(); }
+      } catch (err) {
+        showToast('Could not assign the task.');
+      }
+    }
+
+    function idleLabel(seconds) {
+      if (seconds == null) return '-';
+      const m = Math.floor(seconds / 60);
+      return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
+    }
+    function shortTime(iso) {
+      if (!iso) return '-';
+      const d = new Date(iso);
+      return isNaN(d) ? iso : d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    }
+
+    async function loadIntegrity() {
+      try {
+        const res = await fetch('/api/admin/integrity?limit=200');
+        const data = await res.json();
+        if (!data.success) { showToast(data.message || 'Not available.'); return; }
+        document.getElementById('integrity-rule').textContent =
+          `Shifts stop automatically after ${Math.round(data.idle_window_seconds / 60)} minutes with no activity or no heartbeats. Only the Super Admin and Tech Lead can see this page.`;
+        const idleWindow = data.idle_window_seconds;
+        document.getElementById('integrity-live').innerHTML = (data.live || []).length ? data.live.map(r => {
+          const cls = r.idle_seconds == null ? 'gone' : r.idle_seconds > idleWindow / 2 ? 'idle' : 'ok';
+          return `<tr><td style="font-weight:600">${esc(r.employee_name)}<div class="rbac-muted">${esc(r.employee_id)}</div></td><td>${esc(r.clock_in)}</td><td><span class="rbac-chip ${cls}">${r.idle_seconds == null ? 'waiting' : idleLabel(r.idle_seconds) + ' ago'}</span></td><td>${r.heartbeats} <span class="rbac-muted">${esc(r.source || '')}</span></td></tr>`;
+        }).join('') : '<tr><td colspan="4" class="rbac-muted">Nobody is clocked in.</td></tr>';
+        document.getElementById('integrity-events').innerHTML = (data.events || []).length ? data.events.map(e =>
+          `<tr><td style="font-weight:600">${esc(e.employee_name)}<div class="rbac-muted">${esc(e.employee_id)}</div></td><td>${esc(e.shift_date)} ${esc(e.clock_in)}<div class="rbac-muted">${esc(e.total_hours || '')}</div></td><td>${esc(shortTime(e.auto_clock_out_at))}<div class="rbac-muted">found ${esc(shortTime(e.detected_at))}</div></td><td><span class="rbac-chip ${e.reason === 'idle' ? 'idle' : 'gone'}">${e.reason === 'idle' ? 'No activity' : 'No heartbeat'}</span><div class="rbac-muted">${esc(e.reason_text)}</div></td><td>${idleLabel(e.idle_seconds)}</td></tr>`
+        ).join('') : '<tr><td colspan="5" class="rbac-muted">No automatic clock-outs yet.</td></tr>';
+      } catch (err) {
+        showToast('Could not load integrity data.');
+      }
+    }
+
+    function renderProfileTasks(tasks) {
+      const root = document.getElementById('profile-task-list');
+      const rule = document.getElementById('profile-work-rule');
+      if (!root) return;
+      const admin = can('tasks.review') && ['super_admin', 'tech_lead'].includes(currentEmployee.portal_role);
+      if (rule) {
+        rule.textContent = admin
+          ? 'Confirm a task as done, or send it back. Your own tasks go to the Super Admin.'
+          : 'Start a task and submit it for review. The person who assigned it, a Tech Lead or the Super Admin confirms it.';
+      }
+      const rows = Array.isArray(tasks) ? tasks : [];
+      const assigneeIds = currentEmployee?.task_assignee_ids ?? [currentEmployee?.employee_id];
+      if (!rows.length) {
+        root.innerHTML = '<p style="font-size:0.82rem;color:#94a3b8;text-align:center;">No tasks on your record yet.</p>';
+        return;
+      }
+      root.innerHTML = rows.map(task => {
+        const id = task['Task ID'] || '';
+        const status = task['Status'] || 'In Progress';
+        const title = task['Task Title'] || 'Task';
+        let action = '';
+        if (status === 'Pending Review' && admin) {
+          action = `<button type="button" class="btn-action btn-clock-in" style="width:auto;padding:6px 10px;font-size:0.75rem;" onclick="moveMyTask('${esc(id)}','Completed','Confirmed by Daliya')">Confirm done</button><button type="button" class="btn-action btn-secondary" style="width:auto;padding:6px 10px;font-size:0.75rem;" onclick="moveMyTask('${esc(id)}','In Progress','Sent back by Daliya')">Not done</button>`;
+        } else if (status === 'Pending Review') {
+          action = '<span style="font-size:0.75rem;font-weight:700;color:#b45309;">With Daliya</span>';
+        } else if (status === 'Completed' && admin) {
+          action = `<button type="button" class="btn-action btn-secondary" style="width:auto;padding:6px 10px;font-size:0.75rem;" onclick="moveMyTask('${esc(id)}','In Progress','Reopened by Daliya')">Reopen</button>`;
+        } else if (status === 'Completed') {
+          action = '<span style="font-size:0.75rem;font-weight:700;color:#047857;">Done</span>';
+        } else if (!assigneeIds.some(value => value && String(value).trim().toLowerCase() === String(task['Employee ID'] || '').trim().toLowerCase())) {
+          action = '<span>Assigned employee only</span>';
+        } else if (status === 'Pending') {
+          action = `<button type="button" class="btn-action btn-clock-in" style="width:auto;padding:6px 10px;font-size:0.75rem;" onclick="moveMyTask('${esc(id)}','In Progress','Started')">Start</button>`;
+        } else {
+          action = `<button type="button" class="btn-action btn-clock-in" style="width:auto;padding:6px 10px;font-size:0.75rem;" onclick="moveMyTask('${esc(id)}','Pending Review','Submitted for review')">Submit for review</button>`;
+        }
+        return `<div style="padding:10px 0;border-top:1px solid var(--border);"><div style="font-weight:700;color:#0f172a;">${esc(title)}</div><div style="font-size:0.74rem;color:#64748b;margin:3px 0 6px;">${esc(id)} · ${esc(status)}</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${action}</div></div>`;
+      }).join('');
+    }
+
+    async function moveMyTask(taskId, status, notes) {
+      try {
+        const res = await fetch('/api/admin/tasks/update_status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task_id: taskId, status: status, notes: notes || '' })
+        });
+        const data = await res.json();
+        showToast(data.message || (data.success ? 'Task updated.' : 'Could not update the task.'));
+        if (data.success) {
+          fetchEmployeeStatus();
+          if (document.getElementById('tab-team')?.classList.contains('active')) await loadTeamDesk();
+        }
+      } catch (err) {
+        showToast('Could not update the task.');
+      }
+    }
+
+    // Fetch live status from server
+    function showDeskError(message) {
+      const errorEl = document.getElementById('desk-load-error');
+      if (errorEl) {
+        errorEl.hidden = !message;
+        errorEl.textContent = message || '';
+      }
+      if (!message) return;
+      const shifts = document.getElementById('shifts-history-container');
+      if (shifts) shifts.innerHTML = `<p class="team-empty">${esc(message)}</p>`;
+      const tasks = document.getElementById('profile-task-list');
+      if (tasks) tasks.innerHTML = `<p class="team-empty">${esc(message)}</p>`;
+      const leaves = document.getElementById('leaves-list-container');
+      if (leaves) leaves.innerHTML = `<p class="team-empty">${esc(message)}</p>`;
+    }
+
+    async function fetchEmployeeStatus() {
+      if (!currentEmployee) return;
+      try {
+        const res = await fetch('/api/employee/my_desk');
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          showDeskError(data.message || 'Could not load your desk.');
+          return;
+        }
+        showDeskError('');
+        if (data.success) {
+          localClock = WorkspaceClock.snapshot(data.server_now);
+          updateClock();
+          const shiftToday = data.is_clocked_in && data.current_shift && (!data.today || data.current_shift.date === data.today);
+          updateShiftUI(!!shiftToday, shiftToday ? data.current_shift : null, data.server_now);
+          renderShiftsList(data.recent_logs);
+          renderLeavesList(data.recent_leaves);
+          renderProfileTasks(data.tasks || []);
+
+          if (data.stats) {
+            document.getElementById('stat-total-shifts').innerText = data.stats.total_shifts_logged || '0';
+            document.getElementById('stat-approved-leaves-tracker').innerText = data.stats.approved_leaves || '0';
+            document.getElementById('stat-approved-leaves').innerText = data.stats.approved_leaves || '0';
+            document.getElementById('stat-pending-leaves').innerText = data.stats.pending_leaves || '0';
+            document.getElementById('stat-total-leaves').innerText = data.stats.total_leaves || String((data.recent_leaves || []).length);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching employee status:', err);
+        showDeskError('Could not load your desk. Check your connection and try again.');
+      }
+    }
+
+    function updateShiftUI(isWorking, shift, serverNow) {
+      const pulse = document.getElementById('pulse-indicator');
+      const text = document.getElementById('shift-status-text');
+      const stopwatchWrap = document.getElementById('stopwatch-wrap');
+      const inPanel = document.getElementById('clock-in-panel');
+      const outPanel = document.getElementById('clock-out-panel');
+
+      if (isWorking && shift) {
+        pulse.style.background = '#34d399';
+        pulse.style.animation = 'pulse 1.6s infinite';
+        text.innerText = '🟢 On Duty - Working';
+        stopwatchWrap.style.display = 'block';
+        inPanel.style.display = 'none';
+        outPanel.style.display = 'block';
+
+        document.getElementById('shift-started-at').innerText = `Started at ${WorkspaceClock.shiftStart(shift)} (${shift.working_mode || 'Remote'})`;
+        startStopwatch(shift, serverNow);
+        if (window.ActivityHeartbeat) {
+          ActivityHeartbeat.start({
+            onEnded: () => { showToast('Your shift has ended. Clock in again to continue.'); fetchEmployeeStatus(); }
+          });
+        }
+      } else {
+        pulse.style.background = '#94a3b8';
+        pulse.style.animation = 'none';
+        text.innerText = 'Off Duty';
+        stopwatchWrap.style.display = 'none';
+        inPanel.style.display = 'block';
+        outPanel.style.display = 'none';
+        if (stopwatchInterval) clearInterval(stopwatchInterval);
+        if (window.ActivityHeartbeat) ActivityHeartbeat.stop();
+      }
+    }
+
+    function startStopwatch(shift, serverNow) {
+      if (stopwatchInterval) clearInterval(stopwatchInterval);
+      const elapsed = WorkspaceClock.elapsed(shift, serverNow);
+      const tick = () => { document.getElementById('stopwatch-timer').innerText = WorkspaceClock.formatDuration(elapsed()); };
+      tick();
+      stopwatchInterval = setInterval(tick, 1000);
+    }
+
+    // Submit Clock In
+    async function submitClockIn() {
+      if (!currentEmployee) return;
+      const mode = document.getElementById('work-mode-select').value;
+      const notes = document.getElementById('work-focus-input').value.trim();
+      // Optional: lets Chrome/Edge report system-wide active/idle (work in other apps counts).
+      if (window.ActivityHeartbeat) ActivityHeartbeat.enableSystemIdle();
+
+      try {
+        const res = await fetch('/api/employee/clock_in', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            emp_id: currentEmployee.employee_id,
+            working_mode: mode,
+            start_notes: notes
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message || 'Clocked in successfully!');
+          fetchEmployeeStatus();
+        } else {
+          showToast('Error: ' + data.message);
+        }
+      } catch (err) {
+        showToast('Network error: ' + err.message);
+      }
+    }
+
+    // Submit Clock Out
+    async function submitClockOut() {
+      if (!currentEmployee) return;
+      const summary = document.getElementById('work-summary-input').value.trim();
+
+      try {
+        const res = await fetch('/api/employee/clock_out', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            emp_id: currentEmployee.employee_id,
+            work_summary: summary
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message || 'Clocked out successfully!');
+          document.getElementById('work-summary-input').value = '';
+          fetchEmployeeStatus();
+        } else {
+          showToast('Error: ' + data.message);
+        }
+      } catch (err) {
+        showToast('Network error: ' + err.message);
+      }
+    }
+
+    // Shared log helpers
+    function staffLogTime(value) {
+      const raw = String(value || '').trim();
+      const m = raw.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AaPp][Mm])$/);
+      return m ? `${m[1].padStart(2, '0')}:${m[2]} ${m[3].toUpperCase()}` : raw;
+    }
+    function staffLogHours(value) {
+      const raw = String(value || '').trim();
+      const m = raw.match(/^(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?\s*(?:(\d+)\s*s)?$/i);
+      if (!raw || !m || (!m[1] && !m[2] && !m[3])) return raw;
+      const h = Number(m[1] || 0), min = Number(m[2] || 0), sec = Number(m[3] || 0);
+      return h > 0 ? `${h}h ${min}m` : min > 0 ? `${min}m` : `${sec}s`;
+    }
+    function staffLogDay(value) {
+      const m = String(value || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return String(value || 'Undated');
+      const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+      return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+    }
+    function staffLogMore(btn) {
+      const text = btn.previousElementSibling;
+      const open = text.dataset.open !== 'true';
+      text.dataset.open = String(open);
+      btn.setAttribute('aria-expanded', String(open));
+      btn.textContent = open ? 'Show less' : 'Show more';
+    }
+    function staffLogSummary(text) {
+      const raw = String(text || '').trim();
+      if (!raw) return '';
+      return `<p class="staff-log-summary">${esc(raw)}</p>${raw.length > 110 ? '<button type="button" class="staff-log-more" aria-expanded="false" onclick="staffLogMore(this)">Show more</button>' : ''}`;
+    }
+
+    // Render Shifts List
+    function renderShiftsList(logs) {
+      const container = document.getElementById('shifts-history-container');
+      if (!logs || logs.length === 0) {
+        container.innerHTML = '<p class="staff-log-empty">No shifts logged yet. Clock in to begin.</p>';
+        return;
+      }
+
+      let html = '<div class="staff-log">';
+      let lastDay = null;
+      logs.forEach(log => {
+        const day = String(log['Date'] || '').trim();
+        if (day !== lastDay) {
+          html += `<h4 class="staff-log-day">${esc(staffLogDay(day))}</h4>`;
+          lastDay = day;
+        }
+        const isWorking = /^working/i.test(String(log['Status'] || ''));
+        const badge = isWorking
+          ? '<span class="ms-pill ms-pill--live"><i class="ms-pill-dot" aria-hidden="true"></i>Working</span>'
+          : '<span class="ms-pill ms-pill--done">Completed</span>';
+        const mode = String(log['Working Mode'] || '').trim();
+        html += `
+          <article class="staff-log-row">
+            <div class="staff-log-head">
+              <span class="staff-log-title">${mode ? esc(mode) : 'Shift'}</span>
+              ${badge}
+            </div>
+            <div class="staff-log-times">
+              <div><span>In</span><strong>${esc(staffLogTime(log['Clock In'])) || '—'}</strong></div>
+              <div><span>Out</span><strong>${log['Clock Out'] ? esc(staffLogTime(log['Clock Out'])) : (isWorking ? 'In progress' : '—')}</strong></div>
+              <div class="is-accent"><span>Hours</span><strong>${log['Total Hours'] ? esc(staffLogHours(log['Total Hours'])) : (isWorking ? 'Running' : '—')}</strong></div>
+            </div>
+            ${staffLogSummary(log['Work Summary'])}
+          </article>
+        `;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    // Render Leaves List
+    function renderLeavesList(leaves) {
+      const container = document.getElementById('leaves-list-container');
+      if (!leaves || leaves.length === 0) {
+        container.innerHTML = '<p class="team-empty">No requests yet. When you send one, its review status will appear here.</p>';
+        return;
+      }
+
+      let html = '';
+      [...leaves].reverse().forEach(lv => {
+        const status = String(lv['Status'] || 'Pending');
+        let badge = '<span class="ms-pill ms-pill--wait">Awaiting review</span>';
+        if (status === 'Approved') badge = '<span class="ms-pill ms-pill--ok">Approved</span>';
+        else if (status === 'Rejected') badge = '<span class="ms-pill ms-pill--risk">Not approved</span>';
+        const start = String(lv['Start Date'] || '').trim();
+        const end = String(lv['End Date'] || '').trim();
+        const days = String(lv['Days Count'] || '').trim();
+
+        html += `
+          <article class="leave-request-card">
+            <div class="leave-request-head"><div><div class="leave-request-title">${esc(lv['Leave Type'] || 'Leave request')}</div><div class="team-task-meta">${esc(start) || '—'}${end && end !== start ? ` → ${esc(end)}` : ''} · ${esc(days) || '—'} ${days === '1' ? 'day' : 'days'}</div></div>${badge}</div>
+            ${lv['Reason'] ? `<p class="team-task-meta">${esc(lv['Reason'])}</p>` : ''}
+            ${lv['Review Notes'] ? `<p class="team-task-meta" style="color:#0b7067"><strong>Reviewer note:</strong> ${esc(lv['Review Notes'])}${lv['Reviewed By'] ? ` · ${esc(lv['Reviewed By'])}` : ''}</p>` : ''}
+          </article>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function updateLeaveDaysPreview() {
+      const startValue = document.getElementById('leave-start-date').value;
+      const endValue = document.getElementById('leave-end-date').value;
+      const d1 = startValue ? new Date(`${startValue}T00:00:00`) : null;
+      const d2 = endValue ? new Date(`${endValue}T00:00:00`) : null;
+      if (d1 && d2 && !isNaN(d1) && !isNaN(d2) && d2 >= d1) {
+        const days = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+        document.getElementById('leave-duration-preview').innerText = `Duration: ${days} day${days > 1 ? 's' : ''}`;
+      } else {
+        document.getElementById('leave-duration-preview').innerText = 'Duration: 1 day';
+      }
+    }
+
+    // Submit Leave Application
+    async function submitLeaveApplication(e) {
+      e.preventDefault();
+      if (!currentEmployee) return;
+
+      const type = document.getElementById('leave-type-select').value;
+      const start = document.getElementById('leave-start-date').value;
+      const end = document.getElementById('leave-end-date').value;
+      const reason = document.getElementById('leave-reason-input').value.trim();
+      const btn = document.getElementById('btn-submit-leave');
+
+      btn.disabled = true;
+      btn.innerText = 'Submitting...';
+
+      try {
+        const res = await fetch('/api/employee/apply_leave', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            emp_id: currentEmployee.employee_id,
+            leave_type: type,
+            start_date: start,
+            end_date: end,
+            reason: reason
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message || 'Leave request submitted!');
+          e.target.reset();
+          updateLeaveDaysPreview();
+          document.getElementById('leave-reason-input').value = '';
+          fetchEmployeeStatus();
+        } else {
+          showToast('Error: ' + data.message);
+        }
+      } catch (err) {
+        showToast('Network error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Submit Request';
+      }
+    }
+
+    // Tab Navigation Switcher
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+
+      const target = document.getElementById(tabId);
+      if (target) target.classList.add('active');
+      if (btn) btn.classList.add('active');
+
+      if (tabId === 'tab-tracker' || tabId === 'tab-leaves' || tabId === 'tab-shifts') {
+        fetchEmployeeStatus();
+      }
+    }
+  </script>
+</body>
+</html>
+
